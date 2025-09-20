@@ -1,0 +1,115 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.github.jengelman.gradle.plugins.shadow.ShadowJavaPlugin
+import org.gradle.api.attributes.plugin.GradlePluginApiVersion
+
+plugins {
+    id 'java-gradle-plugin'
+    id 'groovy'
+    id 'idea'
+    id 'eclipse'
+    id 'maven-publish'
+    id 'io.freefair.javadoc-links'
+    id 'net.minecraftforge.gradleutils'
+    alias libs.plugins.gitversion
+    alias libs.plugins.changelog
+    alias libs.plugins.licenser
+    alias libs.plugins.plugin.publish
+    alias libs.plugins.shadow
+}
+
+gradleutils.displayName = 'ForgeDev'
+description = "Forge's Gradle plugin to initialize and streamline the development of Minecraft Forge and its loader."
+group = 'net.minecraftforge'
+version = gitversion.tagOffset
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    withSourcesJar()
+    withJavadocJar()
+}
+
+gradleutils.pluginDevDefaults(configurations, libs.versions.gradle)
+
+dependencies {
+    compileOnly libs.srgutils
+    compileOnly libs.fastcsv
+
+    // Static Analysis
+    compileOnly libs.nulls
+
+    // Gradle API
+    compileOnly libs.gradle
+
+    // GradleUtils Shared Base
+    implementation libs.gradleutils.shared
+
+    // Utils
+    implementation libs.bundles.utils
+}
+
+license {
+    header = rootProject.file('LICENSE-header.txt')
+    newLine = false
+    exclude '**/*.properties'
+}
+
+tasks.withType(GroovyCompile).configureEach {
+    groovyOptions.optimizationOptions.indy = true
+}
+
+tasks.named('jar', Jar) {
+    archiveClassifier = 'thin'
+}
+
+tasks.named('shadowJar', ShadowJar) {
+    enableAutoRelocation = true
+    archiveClassifier = null
+    relocationPrefix = 'net.minecraftforge.forgedev.shadow'
+}
+
+tasks.withType(Javadoc).configureEach {
+    javadocTool = javaToolchains.javadocToolFor { languageVersion = JavaLanguageVersion.of(24) }
+}
+
+changelog {
+    fromBase()
+}
+
+gradlePlugin {
+    website = gitversion.url
+    vcsUrl = gitversion.url + '.git'
+
+    plugins.register('jarjar') {
+        id = 'net.minecraftforge.forgedev'
+        implementationClass = 'net.minecraftforge.forgedev.ForgeDevPlugin'
+        displayName = gradleutils.displayName.get()
+        description = project.description
+        tags = ['minecraftforge']
+    }
+}
+
+publishing {
+    repositories {
+        maven gradleutils.publishingForgeMaven
+    }
+
+    publications.register('pluginMaven', MavenPublication) {
+        changelog.publish(it)
+        gradleutils.promote(it)
+
+        pom { pom ->
+            name = gradleutils.displayName
+            description = project.description
+
+            gradleutils.pom.addRemoteDetails(pom)
+
+            licenses {
+                license gradleutils.pom.licenses.LGPLv2_1
+            }
+
+            developers {
+                developer gradleutils.pom.developers.Jonathing
+            }
+        }
+    }
+}
