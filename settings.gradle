@@ -4,17 +4,17 @@ plugins {
     // NOTE: We need to load this into the classpath before GradleUtils for the service to load correctly
     id 'io.freefair.javadoc-links' version '8.14' apply false // https://plugins.gradle.org/plugin/io.freefair.javadoc-links
 
-    id 'net.minecraftforge.gradleutils' version '3.3.2' // https://plugins.gradle.org/plugin/net.minecraftforge.gradleutils
+    id 'net.minecraftforge.gradleutils' version '3.3.3' // https://plugins.gradle.org/plugin/net.minecraftforge.gradleutils
 }
 
 rootProject.name = 'forgedev'
 
 dependencyResolutionManagement {
     repositories {
-        //mavenLocal()
         mavenCentral()
         maven gradleutils.forgeMaven
         maven { url = 'https://maven.moddinglegacy.com/maven' } // Gradle API
+        //mavenLocal()
     }
 
     //@formatter:off
@@ -36,7 +36,7 @@ dependencyResolutionManagement {
         library 'gradle', 'name.remal.gradle-api', 'gradle-api'  versionRef 'gradle'
 
         // GradleUtils Shared Base
-        library 'gradleutils-shared', 'net.minecraftforge', 'gradleutils-shared' version '3.3.2'
+        library 'gradleutils-shared', 'net.minecraftforge', 'gradleutils-shared' version '3.3.3'
 
         library 'srgutils',  'net.minecraftforge', 'srgutils'   version '0.5.14'
         library 'fastcsv',   'de.siegmar',         'fastcsv'    version '3.7.0'

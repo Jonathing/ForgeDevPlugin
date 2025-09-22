@@ -31,7 +31,7 @@ abstract class LegacyExtractExistingFiles extends DefaultTask implements ForgeDe
     LegacyExtractExistingFiles() { }
 
     @TaskAction
-    void exec() {
+    protected void exec() {
         final zip = this.archiveOperations.zipTree(this.archive)
 
         for (var directory in this.targets) {

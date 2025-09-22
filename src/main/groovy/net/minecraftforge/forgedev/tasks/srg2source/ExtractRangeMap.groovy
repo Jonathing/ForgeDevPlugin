@@ -30,7 +30,7 @@ abstract class ExtractRangeMap extends S2SExec {
     abstract @Input @Optional Property<Boolean> getMixins()
     abstract @Input @Optional Property<Boolean> getMixinsFatal()
 
-    private final Property<JavaVersion> sourceCompatiblityProp
+    private final Property<JavaVersion> sourceCompatiblityProp = this.objects.property(JavaVersion)
 
     @Input @Optional Property<JavaVersion> getSourceCompatibility() {
         this.sourceCompatiblityProp
@@ -47,8 +47,6 @@ abstract class ExtractRangeMap extends S2SExec {
     @Inject
     ExtractRangeMap() {
         this.output.convention(this.defaultOutputFile)
-
-        this.sourceCompatiblityProp = this.objectFactory.property(JavaVersion)
 
         this.sourceCompatibility.convention(
             this.project.extensions.findByType(JavaPluginExtension).toolchain.languageVersion.map(JavaVersion.&toVersion)

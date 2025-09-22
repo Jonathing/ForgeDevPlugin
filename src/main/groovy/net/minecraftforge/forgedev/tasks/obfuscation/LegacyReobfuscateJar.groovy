@@ -11,6 +11,7 @@ import net.minecraftforge.forgedev.tasks.ToolExec
 import net.minecraftforge.srgutils.IMappingFile
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
@@ -20,6 +21,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.process.ExecResult
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
@@ -57,7 +59,7 @@ abstract class LegacyReobfuscateJar extends ToolExec {
             this.getTool(Tools.SRGUTILS).classpath
         )
 
-        this.setStandardOutput(Util.toLog(this.logger.&info))
+        this.standardOutputLogLevel.set(LogLevel.INFO)
 
         this.keepPackages.convention(false)
         this.keepData.convention(false)
@@ -89,8 +91,8 @@ abstract class LegacyReobfuscateJar extends ToolExec {
     }
 
     @Override
-    void exec() {
-        super.exec()
+    protected ExecResult exec() {
+        var result = super.exec()
 
         final work = this.workerExecutor.classLoaderIsolation {
             it.classpath.from(this.workerActionClasspath)
@@ -106,6 +108,8 @@ abstract class LegacyReobfuscateJar extends ToolExec {
         }
 
         work.await()
+
+        return result
     }
 
     @CompileStatic

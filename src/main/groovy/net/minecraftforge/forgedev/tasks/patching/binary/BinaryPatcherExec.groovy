@@ -11,6 +11,7 @@ import net.minecraftforge.forgedev.Util
 import net.minecraftforge.forgedev.tasks.ToolExec
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.problems.Problems
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -39,7 +40,7 @@ import javax.inject.Inject
         this.pack200.convention(false)
         this.legacy.convention(false)
 
-        this.standardOutput = Util.toLog(this.logger.&info)
+        this.standardOutputLogLevel.set(LogLevel.INFO)
     }
 
     @Override

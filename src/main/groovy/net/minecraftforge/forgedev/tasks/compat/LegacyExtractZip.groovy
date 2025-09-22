@@ -30,7 +30,7 @@ abstract class LegacyExtractZip extends DefaultTask implements ForgeDevTask {
     protected abstract @Inject ArchiveOperations getArchiveOperations()
 
     @TaskAction
-    void exec() {
+    protected void exec() {
         this.fileSystemOperations.copy(copy -> copy
             .from(this.archiveOperations.zipTree(this.input))
             .into(this.output)

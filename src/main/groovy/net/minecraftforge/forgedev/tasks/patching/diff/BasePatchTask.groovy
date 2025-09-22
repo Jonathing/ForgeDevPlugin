@@ -54,20 +54,20 @@ import java.nio.file.Files
     }
 
     void setRejects(RegularFile rejects) {
-        this.rejects.set(this.providerFactory.provider {
+        this.rejects.set(this.providers.provider {
             rejects.asFile
         })
     }
 
     void setRejects(Directory rejects) {
-        this.rejects.set(this.providerFactory.provider {
+        this.rejects.set(this.providers.provider {
             rejects.asFile.tap {
                 Files.createDirectories(it.toPath())
             }
         })
     }
 
-    private final Property<File> rejects
+    private final Property<File> rejects = this.objects.property(File)
 
     @Inject
     BasePatchTask() {
@@ -75,8 +75,6 @@ import java.nio.file.Files
             this.archiveRejects.unset().disallowChanges()
         if (this.patches instanceof DirectoryProperty)
             this.archivePatches.unset().disallowChanges()
-
-        this.rejects = this.objectFactory.property(File)
     }
 
     @Override

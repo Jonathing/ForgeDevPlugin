@@ -10,7 +10,9 @@ import net.minecraftforge.forgedev.Tools
 import net.minecraftforge.forgedev.Util
 import net.minecraftforge.forgedev.tasks.ToolExec
 import org.gradle.api.JavaVersion
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.problems.Problems
+import org.gradle.process.ExecResult
 
 import javax.inject.Inject
 
@@ -26,13 +28,12 @@ import javax.inject.Inject
     S2SExec() {
         super(Tools.SRG2SRC)
 
-        this.standardOutput = Util.toLog(this.logger.&info)
+        this.standardOutputLogLevel.set(LogLevel.INFO)
     }
 
     @Override
-    void exec() {
-        super.exec()
-        this.executionResult.get().rethrowFailure().assertNormalExitValue()
+    protected ExecResult exec() {
+        super.exec().rethrowFailure().assertNormalExitValue()
     }
 
     protected final String parseSourceCompatibility(JavaVersion javaVersion) {

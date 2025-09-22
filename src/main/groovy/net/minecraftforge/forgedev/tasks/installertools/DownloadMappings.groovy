@@ -8,6 +8,7 @@ import groovy.transform.CompileStatic
 import net.minecraftforge.forgedev.Tools
 import net.minecraftforge.forgedev.tasks.ToolExec
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
@@ -26,6 +27,7 @@ abstract class DownloadMappings extends ToolExec {
         super(Tools.INSTALLERTOOLS)
 
         this.output.convention(this.getDefaultOutputFile('tsrg'))
+        this.standardOutputLogLevel.set(LogLevel.INFO)
     }
 
     @Override

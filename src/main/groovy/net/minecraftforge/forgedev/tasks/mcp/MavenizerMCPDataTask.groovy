@@ -11,6 +11,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.process.ExecResult
 
 import javax.inject.Inject
 import java.nio.file.Files
@@ -62,11 +63,13 @@ abstract class MavenizerMCPDataTask extends MavenizerExec {
     }
 
     @Override
-    void exec() {
-        super.exec()
+    protected ExecResult exec() {
+        var result = super.exec()
 
         if (!this.output.get().asFile.exists() && this.isAllowEmpty.getOrElse(false)) {
             Files.createFile(this.output.get().asFile.toPath())
         }
+
+        return result
     }
 }

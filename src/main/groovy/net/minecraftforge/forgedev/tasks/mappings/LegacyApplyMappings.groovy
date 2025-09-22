@@ -52,7 +52,7 @@ abstract class LegacyApplyMappings extends DefaultTask implements ForgeDevTask {
     protected abstract @Inject WorkerExecutor getWorkerExecutor()
 
     @TaskAction
-    void exec() {
+    protected void exec() {
         final work = this.workerExecutor.classLoaderIsolation {
             it.classpath.from(this.workerClasspath)
         }

@@ -55,7 +55,7 @@ abstract class LegacyGenerateSRG extends DefaultTask implements ForgeDevTask {
     }
 
     @TaskAction
-    void exec() {
+    protected void exec() {
         final work = this.workerExecutor.classLoaderIsolation {
             it.classpath.from(this.workerClasspath)
         }

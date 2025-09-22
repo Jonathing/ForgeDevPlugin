@@ -14,6 +14,7 @@ import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.process.ExecResult
 
 import javax.inject.Inject
 
@@ -21,9 +22,9 @@ import javax.inject.Inject
 abstract class ApplyPatches extends BasePatchTask {
     abstract @Input Property<Boolean> getFailOnError()
 
-    private final RegularFileProperty input
-    private final DirectoryProperty patches
-    private final RegularFileProperty output
+    private final RegularFileProperty input = this.objects.fileProperty()
+    private final DirectoryProperty patches = this.objects.directoryProperty()
+    private final RegularFileProperty output = this.objects.fileProperty()
 
     @InputFile RegularFileProperty getInput() { this.input }
     @InputDirectory @Optional DirectoryProperty getPatches() { this.patches }
@@ -31,25 +32,19 @@ abstract class ApplyPatches extends BasePatchTask {
 
     @Inject
     ApplyPatches() {
-        this.input = this.objectFactory.fileProperty()
-        this.patches = this.objectFactory.directoryProperty()
-        this.output = this.objectFactory.fileProperty()
-
         this.failOnError.convention(true)
 
         this.logLevel.convention('warn')
     }
 
     @Override
-    void exec() {
+    protected ExecResult exec() {
         if (!this.patches.isPresent()) {
             this.output.get().asFile.bytes = this.input.get().asFile.bytes
             return
         }
 
-        super.exec()
-
-        var result = this.executionResult.get()
+        var result = super.exec()
         var exitValue = result.exitValue
         if (exitValue !== 0) {
             // patches failed

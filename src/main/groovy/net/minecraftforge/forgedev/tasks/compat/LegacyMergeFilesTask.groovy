@@ -49,7 +49,7 @@ abstract class LegacyMergeFilesTask extends DefaultTask implements ForgeDevTask 
     }
 
     @TaskAction
-    void exec() {
+    protected void exec() {
         var buffer = new StringBuilder()
         for (var config in this.filesToMerge.files) {
             var entries = config.text

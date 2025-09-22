@@ -12,9 +12,9 @@ import org.gradle.api.tasks.OutputDirectory
 
 @CompileStatic
 abstract class GeneratePatches extends BaseDiffTask {
-    private final RegularFileProperty input = this.objectFactory.fileProperty()
-    private final RegularFileProperty modified = this.objectFactory.fileProperty()
-    private final DirectoryProperty output = this.objectFactory.directoryProperty()
+    private final RegularFileProperty input = this.objects.fileProperty()
+    private final RegularFileProperty modified = this.objects.fileProperty()
+    private final DirectoryProperty output = this.objects.directoryProperty()
 
     @InputFile RegularFileProperty getInput() { this.input }
     @InputFile RegularFileProperty getModified() { this.modified }

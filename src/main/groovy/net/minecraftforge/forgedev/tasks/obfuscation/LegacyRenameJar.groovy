@@ -11,6 +11,7 @@ import net.minecraftforge.forgedev.tasks.ToolExec
 import net.minecraftforge.srgutils.IMappingFile
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.Classpath
@@ -19,6 +20,7 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.process.ExecResult
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
@@ -54,7 +56,7 @@ abstract class LegacyRenameJar extends ToolExec {
         )
 
         this.temporaryMappings.convention(this.defaultOutputDirectory.map { it.file('mappings_temp.tsrg') })
-        this.setStandardOutput(Util.toLog(this.logger.&info))
+        this.standardOutputLogLevel.set(LogLevel.INFO)
     }
 
     @Override
@@ -62,9 +64,9 @@ abstract class LegacyRenameJar extends ToolExec {
         super.addArguments()
 
         var argsList = [
-            '--input', this.input.get().asFile.absolutePath,
-            '--names', this.temporaryMappings.get().asFile.absolutePath,
-            '--output', this.output.get().asFile.absolutePath
+            '--input', this.input.asFile.get().absolutePath,
+            '--names', this.temporaryMappings.asFile.get().absolutePath,
+            '--output', this.output.asFile.get().absolutePath
         ]
 
         for (var library in this.libraries.files) {
@@ -79,7 +81,7 @@ abstract class LegacyRenameJar extends ToolExec {
     }
 
     @Override
-    void exec() {
+    protected ExecResult exec() {
         final work = this.workerExecutor.classLoaderIsolation {
             it.classpath.from(this.workerActionClasspath)
         }
@@ -92,7 +94,7 @@ abstract class LegacyRenameJar extends ToolExec {
 
         work.await()
 
-        super.exec()
+        return super.exec()
     }
 
     @CompileStatic
