@@ -8,6 +8,7 @@ import groovy.lang.Closure;
 import net.minecraftforge.forgedev.tasks.compat.LegacyExtractZip;
 import net.minecraftforge.forgedev.tasks.compat.LegacyMergeFilesTask;
 import net.minecraftforge.forgedev.tasks.filtering.LegacyFilterNewJar;
+import net.minecraftforge.forgedev.tasks.generation.GeneratePatcherConfigV2;
 import net.minecraftforge.forgedev.tasks.mappings.LegacyApplyMappings;
 import net.minecraftforge.forgedev.tasks.mappings.LegacyGenerateSRG;
 import net.minecraftforge.forgedev.tasks.mcp.MavenizerMCPDataTask;
@@ -22,6 +23,7 @@ import net.minecraftforge.forgedev.tasks.patching.diff.GeneratePatches;
 import net.minecraftforge.forgedev.tasks.srg2source.ApplyRangeMap;
 import net.minecraftforge.forgedev.tasks.srg2source.ExtractRangeMap;
 import net.minecraftforge.gradleutils.shared.Closures;
+import net.minecraftforge.util.data.json.PatcherConfig;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.file.Directory;
@@ -157,6 +159,8 @@ public abstract class ForgeDevExtension {
             task.getExcFiles().from(/*createExc.flatMap(CreateExc::getOutput), */legacyPatcher.getExcs());
         });
 
+        var userdevConfig = tasks.register("userdevConfig", GeneratePatcherConfigV2.class);
+
         var genPatches = tasks.register("genPatches", GeneratePatches.class, task -> {
             task.setOnlyIf(t -> legacyPatcher.getPatches().isPresent());
             task.getOutput().set(legacyPatcher.getPatches());
@@ -227,8 +231,7 @@ public abstract class ForgeDevExtension {
         var userdevJar = tasks.register("userdevJar", Jar.class, task -> {
             task.dependsOn(srgSourcesJar, bakePatches);
             task.setOnlyIf(t -> legacyPatcher.isSrgPatches());
-            // TODO WE NEED USERDEV CONFIG!!! See GenerateUserdevConfig in FG6
-            //task.from(userdevConfig.flatMap(GenerateUserdevConfig::getOutput), e -> e.rename(f -> "config.json"));
+            task.from(userdevConfig.flatMap(GeneratePatcherConfigV2::getOutput), e -> e.rename(f -> "config.json"));
             task.from(genJoinedBinPatches.flatMap(CreateBinPatches::getOutput), e -> e.rename(f -> "joined.lzma"));
             task.from(project.zipTree(bakePatches.flatMap(BakePatches::getOutput)), e -> e.into("patches/"));
             task.getArchiveClassifier().set("userdev");
@@ -288,7 +291,7 @@ public abstract class ForgeDevExtension {
                 });
                 for (var f : legacyPatcher.getAccessTransformers()) {
                     userdevJar.configure(t -> t.from(f, e -> e.into("ats/")));
-                    //userdevConfig.configure(t -> t.getATs().from(f));
+                    userdevConfig.configure(t -> t.getATs().from(f));
                 }
             }
 
@@ -298,35 +301,34 @@ public abstract class ForgeDevExtension {
                 for (var extraMapping : legacyPatcher.getExtraMappings()) {
                     if (extraMapping instanceof File e) {
                         userdevJar.configure(t -> t.from(e, c -> c.into("srgs/")));
-                        //userdevConfig.configure(t -> t.getSRGs().from(e));
+                        userdevConfig.configure(t -> t.getSRGs().from(e));
                     } else if (extraMapping instanceof String e) {
-                        //userdevConfig.configure(t -> t.getSRGLines().add(e));
+                        userdevConfig.configure(t -> t.getSRGLines().add(e));
                     }
                 }
             }
 
-            /*
             //UserDev Config Default Values
             userdevConfig.configure(task -> {
-                task.getTool().convention("net.minecraftforge:binarypatcher:" + Constants.BINPATCH_VERSION + ":fatjar");
-                task.getArguments().addAll("--clean", "{clean}", "--output", "{output}", "--apply", "{patch}");
+                task.getMCPConfig().set(legacyMcp.getConfig());
+                task.getBinpatcherVersion().set(Constants.BINPATCH_VERSION);
+                task.getBinpatcherArguments().addAll("--clean", "{clean}", "--output", "{output}", "--apply", "{patch}");
                 task.getUniversal().convention(universalJar.flatMap(t ->
                     t.getArchiveBaseName().flatMap(baseName ->
                         t.getArchiveClassifier().flatMap(classifier ->
                             t.getArchiveExtension().map(jarExt ->
                                 project.getGroup().toString() + ':' + baseName + ':' + project.getVersion() + ':' + classifier + '@' + jarExt
                             )))));
-                task.getSource().convention(sourcesJar.flatMap(t ->
+                task.getSource().convention(srgSourcesJar.flatMap(t ->
                     t.getArchiveBaseName().flatMap(baseName ->
                         t.getArchiveClassifier().flatMap(classifier ->
                             t.getArchiveExtension().map(jarExt ->
                                 project.getGroup().toString() + ':' + baseName + ':' + project.getVersion() + ':' + classifier + '@' + jarExt
                             )))));
-                task.getPatchesOriginalPrefix().convention(genPatches.flatMap(GeneratePatches::getOriginalPrefix));
-                task.getPatchesModifiedPrefix().convention(genPatches.flatMap(GeneratePatches::getModifiedPrefix));
-                task.setNotchObf(extension.getNotchObf());
+                task.getPatchesOriginalPrefix().convention(genPatches.flatMap(GeneratePatches::getBasePathPrefix));
+                task.getPatchesModifiedPrefix().convention(genPatches.flatMap(GeneratePatches::getModifiedPathPrefix));
+                task.getNotchObf().set(legacyPatcher.getNotchObf());
             });
-             */
 
             if (legacyPatcher.isSrgPatches()) {
                 genPatches.configure(task -> task.getModified().set(applyRangeMapBase.flatMap(ApplyRangeMap::getOutput)));

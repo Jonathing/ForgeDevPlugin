@@ -6,6 +6,7 @@ package net.minecraftforge.forgedev.tasks.mappings
 
 
 import groovy.transform.CompileStatic
+import groovy.transform.PackageScope
 import net.minecraftforge.forgedev.ForgeDevTask
 import net.minecraftforge.forgedev.Tools
 import net.minecraftforge.srgutils.IMappingFile
@@ -29,8 +30,6 @@ import javax.inject.Inject
 
 @CompileStatic
 abstract class LegacyGenerateSRG extends DefaultTask implements ForgeDevTask {
-    protected abstract @InputFiles @Classpath ConfigurableFileCollection getClasspath()
-
     abstract @Input Property<IMappingFile.Format> getFormat()
     abstract @Input Property<Boolean> getNotch()
     abstract @Input Property<Boolean> getReverse()
@@ -39,12 +38,13 @@ abstract class LegacyGenerateSRG extends DefaultTask implements ForgeDevTask {
     abstract @InputFile RegularFileProperty getMappingsZip()
     abstract @OutputFile RegularFileProperty getOutput()
 
+    protected abstract @InputFiles @Classpath ConfigurableFileCollection getWorkerClasspath()
     protected abstract @Inject WorkerExecutor getWorkerExecutor()
 
     LegacyGenerateSRG() {
-        this.classpath.from(
-            this.getTool(Tools.SRGUTILS).classpath,
-            this.getTool(Tools.FASTCSV).classpath
+        this.workerClasspath.from(
+            this.getTool(Tools.SRGUTILS),
+            this.getTool(Tools.FASTCSV)
         )
 
         this.format.convention(IMappingFile.Format.TSRG2)
@@ -57,7 +57,7 @@ abstract class LegacyGenerateSRG extends DefaultTask implements ForgeDevTask {
     @TaskAction
     void exec() {
         final work = this.workerExecutor.classLoaderIsolation {
-            it.classpath.from(this.classpath)
+            it.classpath.from(this.workerClasspath)
         }
 
         work.submit(Action) {
@@ -74,7 +74,7 @@ abstract class LegacyGenerateSRG extends DefaultTask implements ForgeDevTask {
     }
 
     @CompileStatic
-    protected static abstract class Action implements WorkAction<Parameters> {
+    @PackageScope static abstract class Action implements WorkAction<Parameters> {
         @CompileStatic
         static interface Parameters extends WorkParameters {
             Property<IMappingFile.Format> getFormat()

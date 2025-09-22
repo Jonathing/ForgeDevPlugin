@@ -28,28 +28,25 @@ import java.util.zip.ZipOutputStream
 
 @CompileStatic
 abstract class LegacyFilterNewJar extends DefaultTask implements ForgeDevTask {
-    abstract @InputFiles @Classpath ConfigurableFileCollection getClasspath()
-
     abstract @InputFile RegularFileProperty getInput()
     abstract @InputFile RegularFileProperty getSrg()
     abstract @InputFiles ConfigurableFileCollection getBlacklist()
     abstract @OutputFile RegularFileProperty getOutput()
 
+    protected abstract @InputFiles @Classpath ConfigurableFileCollection getWorkerClasspath()
     protected abstract @Inject WorkerExecutor getWorkerExecutor()
 
     @Inject
     LegacyFilterNewJar() {
         this.output.convention(this.defaultOutputFile)
 
-        this.classpath.from(
-            this.getTool(Tools.SRGUTILS).classpath
-        )
+        this.workerClasspath.from(this.getTool(Tools.SRGUTILS))
     }
 
     @TaskAction
     void exec() {
         final work = this.workerExecutor.classLoaderIsolation {
-            it.classpath.from(this.classpath)
+            it.classpath.from(this.workerClasspath)
         }
 
         work.submit(Action) {
@@ -73,6 +70,7 @@ abstract class LegacyFilterNewJar extends DefaultTask implements ForgeDevTask {
 
     @CompileStatic
     protected static abstract class Action implements WorkAction<Parameters> {
+        @CompileStatic
         static interface Parameters extends WorkParameters {
             RegularFileProperty getInput()
 

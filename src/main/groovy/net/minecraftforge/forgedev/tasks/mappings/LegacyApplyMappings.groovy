@@ -5,6 +5,7 @@
 package net.minecraftforge.forgedev.tasks.mappings
 
 import groovy.transform.CompileStatic
+import groovy.transform.PackageScope
 import net.minecraftforge.forgedev.ForgeDevTask
 import net.minecraftforge.forgedev.Tools
 import net.minecraftforge.util.file.FileUtils
@@ -30,8 +31,6 @@ import java.util.zip.ZipOutputStream
 
 @CompileStatic
 abstract class LegacyApplyMappings extends DefaultTask implements ForgeDevTask {
-    protected abstract @InputFiles @Classpath ConfigurableFileCollection getClasspath()
-
     abstract @Input Property<Boolean> getJavadocs()
     abstract @Input Property<Boolean> getLambdas()
 
@@ -41,9 +40,7 @@ abstract class LegacyApplyMappings extends DefaultTask implements ForgeDevTask {
 
     @Inject
     LegacyApplyMappings() {
-        this.classpath.from(
-            this.getTool(Tools.FASTCSV).classpath
-        )
+        this.workerClasspath.from(this.getTool(Tools.FASTCSV))
 
         this.output.convention(this.defaultOutputFile)
 
@@ -51,12 +48,13 @@ abstract class LegacyApplyMappings extends DefaultTask implements ForgeDevTask {
         this.lambdas.convention(false)
     }
 
+    protected abstract @InputFiles @Classpath ConfigurableFileCollection getWorkerClasspath()
     protected abstract @Inject WorkerExecutor getWorkerExecutor()
 
     @TaskAction
     void exec() {
         final work = this.workerExecutor.classLoaderIsolation {
-            it.classpath.from(this.classpath)
+            it.classpath.from(this.workerClasspath)
         }
 
         work.submit(Action) {
@@ -72,7 +70,7 @@ abstract class LegacyApplyMappings extends DefaultTask implements ForgeDevTask {
     }
 
     @CompileStatic
-    protected static abstract class Action implements WorkAction<Parameters> {
+    @PackageScope static abstract class Action implements WorkAction<Parameters> {
         @CompileStatic
         static interface Parameters extends WorkParameters {
             Property<Boolean> getJavadocs()

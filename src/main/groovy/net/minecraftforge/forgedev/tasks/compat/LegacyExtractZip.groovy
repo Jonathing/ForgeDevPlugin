@@ -23,10 +23,8 @@ abstract class LegacyExtractZip extends DefaultTask implements ForgeDevTask {
     abstract @InputFile RegularFileProperty getInput()
     abstract @OutputDirectory DirectoryProperty getOutput()
 
-    LegacyExtractZip() {
-        // TODO [ForgeDev] Consider removing this
-        this.outputs.upToDateWhen { false }
-    }
+    @Inject
+    LegacyExtractZip() { }
 
     protected abstract @Inject FileSystemOperations getFileSystemOperations()
     protected abstract @Inject ArchiveOperations getArchiveOperations()

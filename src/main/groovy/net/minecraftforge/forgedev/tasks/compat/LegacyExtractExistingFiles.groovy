@@ -27,6 +27,9 @@ abstract class LegacyExtractExistingFiles extends DefaultTask implements ForgeDe
     protected abstract @Inject FileSystemOperations getFileSystemOperations()
     protected abstract @Inject ArchiveOperations getArchiveOperations()
 
+    @Inject
+    LegacyExtractExistingFiles() { }
+
     @TaskAction
     void exec() {
         final zip = this.archiveOperations.zipTree(this.archive)
