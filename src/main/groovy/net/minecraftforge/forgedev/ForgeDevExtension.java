@@ -175,7 +175,7 @@ public abstract class ForgeDevExtension {
         var reobfJar = tasks.register("reobfJar", LegacyReobfuscateJar.class, task -> {
             task.getInput().set(jar.flatMap(Jar::getArchiveFile));
             // TODO Optimize this to use a detached configuraiton
-            task.getLibraries().from(project.getConfigurations().named(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME));
+            task.getLibraries().from(project.getConfigurations().named(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME));
         });
 
         var genJoinedBinPatches = tasks.register("genJoinedBinPatches", CreateBinPatches.class, task -> {
@@ -356,7 +356,10 @@ public abstract class ForgeDevExtension {
                     var mcpConfigArtifact = legacyMcp.getConfig();
                     var srgNames = this.getProviders().provider(() -> !legacyPatcher.getNotchObf());
 
-                    Function<String, TaskProvider<MavenizerRawArtifact>> rawJarTask = pipeline -> MavenizerRawArtifact.register(project, pipeline, mcpConfigArtifact, srgNames);
+                    Function<String, TaskProvider<MavenizerRawArtifact>> rawJarTask = pipeline -> {
+                        MavenizerRawArtifact.register(project, pipeline, mcpConfigArtifact, srgNames.map(b -> !b));
+                        return MavenizerRawArtifact.register(project, pipeline, mcpConfigArtifact, srgNames);
+                    };
                     var rawJoinedJar = rawJarTask.apply("joined");
                     var rawClientJar = rawJarTask.apply("client");
                     var rawServerJar = rawJarTask.apply("server");
