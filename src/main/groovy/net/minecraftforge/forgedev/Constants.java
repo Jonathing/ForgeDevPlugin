@@ -12,10 +12,10 @@ final class Constants {
     static final String MAVEN_CENTRAL = "https://repo1.maven.org/maven2/";
 
     static final String MAVENIZER_NAME = "mavenizer";
-    static final String MAVENIZER_VERSION = "0.3.15";
+    static final String MAVENIZER_VERSION = "0.4.1";
     static final String MAVENIZER_DL_URL = FORGE_MAVEN + "net/minecraftforge/minecraft-mavenizer/" + MAVENIZER_VERSION + "/minecraft-mavenizer-" + MAVENIZER_VERSION + ".jar";
     static final String MAVENIZER_MAIN = "net.minecraftforge.mcmaven.cli.Main";
-    static final int MAVENIZER_JAVA = 21;
+    static final int MAVENIZER_JAVA = 25;
 
     static final String DIFFPATCH_NAME = "diffpatch";
     static final String DIFFPATCH_VERSION = "2.0.1.39";
