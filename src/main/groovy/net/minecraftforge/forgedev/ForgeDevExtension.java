@@ -4,7 +4,6 @@
  */
 package net.minecraftforge.forgedev;
 
-import groovy.lang.Closure;
 import net.minecraftforge.forgedev.tasks.compat.LegacyExtractZip;
 import net.minecraftforge.forgedev.tasks.compat.LegacyMergeFilesTask;
 import net.minecraftforge.forgedev.tasks.filtering.LegacyFilterNewJar;
@@ -22,8 +21,7 @@ import net.minecraftforge.forgedev.tasks.patching.diff.BakePatches;
 import net.minecraftforge.forgedev.tasks.patching.diff.GeneratePatches;
 import net.minecraftforge.forgedev.tasks.srg2source.ApplyRangeMap;
 import net.minecraftforge.forgedev.tasks.srg2source.ExtractRangeMap;
-import net.minecraftforge.gradleutils.shared.Closures;
-import net.minecraftforge.util.data.json.PatcherConfig;
+import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.file.Directory;
@@ -47,6 +45,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.function.Function;
 
+// TODO [ForgeDev] Hide this and make a public interface
 @VisibleForTesting
 public abstract class ForgeDevExtension {
     public static final String NAME = "forgedev";
@@ -66,12 +65,11 @@ public abstract class ForgeDevExtension {
     }
 
     // NOTE: Pass into RepositoryHandler#maven
-    @SuppressWarnings("rawtypes")
-    public Closure getMaven() {
-        return Closures.<MavenArtifactRepository>consumer(repo -> {
-            repo.setName("ForgeDevMaven");
+    public Action<? super MavenArtifactRepository> getMavenizer() {
+        return repo -> {
+            repo.setName("Mavenizer");
             repo.setUrl(this.mavenizerRepo);
-        });
+        };
     }
 
     @VisibleForTesting
@@ -82,8 +80,8 @@ public abstract class ForgeDevExtension {
     private void setup(ForgeDevPlugin plugin, Project project) {
         var tasks = project.getTasks();
 
-        var legacyPatcher = project.getExtensions().create("patcher", LegacyPatcherExtension.class);
-        var legacyMcp = project.getExtensions().create("mcp", LegacyMCPExtension.class);
+        var legacyPatcher = project.getExtensions().create(LegacyPatcherExtension.EXTENSION_NAME, LegacyPatcherExtension.class);
+        var legacyMcp = project.getExtensions().create(LegacyMCPExtension.EXTENSION_NAME, LegacyMCPExtension.class);
         var java = project.getExtensions().getByType(JavaPluginExtension.class);
 
         var jar = tasks.named(JavaPlugin.JAR_TASK_NAME, Jar.class);
