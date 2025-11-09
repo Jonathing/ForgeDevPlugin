@@ -47,6 +47,12 @@ final class Constants {
     static final String INSTALLERTOOLS_MAIN = "net.minecraftforge.installertools.ConsoleTool";
     static final int INSTALLERTOOLS_JAVA = 8;
 
+    static final String JARCOMPATIBILITYCHECKER_NAME = "jarcompatibilitychecker";
+    static final String JARCOMPATIBILITYCHECKER_VERSION = "0.1.28";
+    static final String JARCOMPATIBILITYCHECKER_DL_URL = FORGE_MAVEN + "net/minecraftforge/JarCompatibilityChecker/" + JARCOMPATIBILITYCHECKER_VERSION + "/JarCompatibilityChecker-" + JARCOMPATIBILITYCHECKER_VERSION + "-all.jar";
+    static final String JARCOMPATIBILITYCHECKER_MAIN = "net.minecraftforge.jarcompatibilitychecker.ConsoleTool";
+    static final int JARCOMPATIBILITYCHECKER_JAVA = 8;
+
     static final String SRGUTILS_NAME = "srgutils";
     static final String SRGUTILS_VERSION = "0.5.14";
     static final String SRGUTILS_DL_URL = FORGE_MAVEN + "net/minecraftforge/srgutils/" + SRGUTILS_VERSION + "/srgutils-" + SRGUTILS_VERSION + ".jar";
