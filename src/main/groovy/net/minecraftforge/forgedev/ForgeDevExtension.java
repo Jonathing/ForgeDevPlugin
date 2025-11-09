@@ -11,6 +11,7 @@ import net.minecraftforge.forgedev.tasks.generation.GeneratePatcherConfigV2;
 import net.minecraftforge.forgedev.tasks.mappings.LegacyApplyMappings;
 import net.minecraftforge.forgedev.tasks.mappings.LegacyGenerateSRG;
 import net.minecraftforge.forgedev.tasks.mcp.MavenizerMCPDataTask;
+import net.minecraftforge.forgedev.tasks.mcp.MavenizerMCPMaven;
 import net.minecraftforge.forgedev.tasks.mcp.MavenizerMCPSetup;
 import net.minecraftforge.forgedev.tasks.mcp.MavenizerRawArtifact;
 import net.minecraftforge.forgedev.tasks.mcp.MavenizerSyncMappings;
@@ -21,9 +22,12 @@ import net.minecraftforge.forgedev.tasks.patching.diff.BakePatches;
 import net.minecraftforge.forgedev.tasks.patching.diff.GeneratePatches;
 import net.minecraftforge.forgedev.tasks.srg2source.ApplyRangeMap;
 import net.minecraftforge.forgedev.tasks.srg2source.ExtractRangeMap;
+import net.minecraftforge.gradleutils.shared.Closures;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.ExternalModuleDependency;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
+import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.model.ObjectFactory;
@@ -49,6 +53,10 @@ import java.util.function.Function;
 @VisibleForTesting
 public abstract class ForgeDevExtension {
     public static final String NAME = "forgedev";
+
+    private static final Attribute<String> OS = Attribute.of("net.minecraftforge.native.operatingSystem", String.class);
+    private static final Attribute<String> MAPPINGS_CHANNEL = Attribute.of("net.minecraftforge.mappings.channel", String.class);
+    private static final Attribute<String> MAPPINGS_VERSION = Attribute.of("net.minecraftforge.mappings.version", String.class);
 
     private final ForgeDevProblems problems = this.getObjects().newInstance(ForgeDevProblems.class);
 
@@ -92,7 +100,9 @@ public abstract class ForgeDevExtension {
         // TODO STOP DOING THAT SHIT
         var setupMCP = tasks.register("setupMCP", MavenizerMCPSetup.class);
 
+        var syncMavenizer = tasks.register("syncMavenizer", MavenizerMCPMaven.class);
         var syncMappingsMaven = tasks.register("syncMappingsMaven", MavenizerSyncMappings.class);
+        Util.runFirst(project, syncMavenizer);
         Util.runFirst(project, syncMappingsMaven);
         var mappingsConfiguration = project.getConfigurations().detachedConfiguration();
         var mappingsZipFile = this.getProviders().provider(mappingsConfiguration::getSingleFile);
@@ -237,12 +247,25 @@ public abstract class ForgeDevExtension {
         var release = tasks.register("release", task -> task.dependsOn(srgSourcesJar, universalJar, userdevJar));
 
         project.afterEvaluate(p -> {
+            // TODO Add mappings as a dependency to FG7???
             // Add mappings so that it can be used by reflection tools.
             // net.minecraft:mappings_CHANNEL:VERSION@zip
             var mappingsDependency = project.getDependencies().create(
                 "net.minecraft:mappings_%s:%s@zip".formatted(legacyPatcher.getMappingChannel().get(), legacyPatcher.getMappingVersion().get())
             );
+            var minecraftDependency = project.getDependencies().create(
+                "net.minecraft:joined:%s".formatted(legacyMcp.getVersion().get()),
+                Closures.<ExternalModuleDependency>consumer(dependency -> {
+                    dependency.attributes(a -> {
+                        a.attributeProvider(OS, getProviders().of(OSValueSource.class, spec -> {}));
+                        a.attributeProvider(MAPPINGS_CHANNEL, legacyPatcher.getMappingChannel());
+                        a.attributeProvider(MAPPINGS_VERSION, legacyPatcher.getMappingVersion());
+                    });
+                })
+            );
+            syncMavenizer.configure(task -> task.getArtifact().set(legacyMcp.getVersion()));
             syncMappingsMaven.configure(task -> task.getVersion().set(legacyPatcher.getMappingVersion()));
+            project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, minecraftDependency);
             project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, mappingsDependency);
             mappingsConfiguration.withDependencies(d -> d.add(mappingsDependency));
 
