@@ -8,6 +8,7 @@ import net.minecraftforge.forgedev.tasks.compat.LegacyExtractZip;
 import net.minecraftforge.forgedev.tasks.compat.LegacyMergeFilesTask;
 import net.minecraftforge.forgedev.tasks.filtering.LegacyFilterNewJar;
 import net.minecraftforge.forgedev.tasks.generation.GeneratePatcherConfigV2;
+import net.minecraftforge.forgedev.tasks.launcher.SlimeLauncherExec;
 import net.minecraftforge.forgedev.tasks.mappings.LegacyApplyMappings;
 import net.minecraftforge.forgedev.tasks.mappings.LegacyGenerateSRG;
 import net.minecraftforge.forgedev.tasks.mcp.MavenizerMCPDataTask;
@@ -26,10 +27,12 @@ import net.minecraftforge.gradleutils.shared.Closures;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ExternalModuleDependency;
+import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
@@ -41,12 +44,14 @@ import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.plugins.ide.eclipse.model.EclipseModel;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.function.Function;
 
 // TODO [ForgeDev] Hide this and make a public interface
@@ -65,6 +70,8 @@ public abstract class ForgeDevExtension {
     protected abstract @Inject ObjectFactory getObjects();
 
     protected abstract @Inject ProviderFactory getProviders();
+
+    protected abstract @Inject ProjectLayout getProjectLayout();
 
     @Inject
     public ForgeDevExtension(ForgeDevPlugin plugin, Project project) {
@@ -101,8 +108,10 @@ public abstract class ForgeDevExtension {
         var setupMCP = tasks.register("setupMCP", MavenizerMCPSetup.class);
 
         var syncMavenizer = tasks.register("syncMavenizer", MavenizerMCPMaven.class);
+        var syncMavenizerForExtra = tasks.register("syncMavenizerForExtra", MavenizerMCPMaven.class);
         var syncMappingsMaven = tasks.register("syncMappingsMaven", MavenizerSyncMappings.class);
         Util.runFirst(project, syncMavenizer);
+        Util.runFirst(project, syncMavenizerForExtra);
         Util.runFirst(project, syncMappingsMaven);
         var mappingsConfiguration = project.getConfigurations().detachedConfiguration();
         var mappingsZipFile = this.getProviders().provider(mappingsConfiguration::getSingleFile);
@@ -246,6 +255,25 @@ public abstract class ForgeDevExtension {
         });
         var release = tasks.register("release", task -> task.dependsOn(srgSourcesJar, universalJar, userdevJar));
 
+        var sourceSetsDir = this.getObjects().directoryProperty().value(this.getProjectLayout().getBuildDirectory().dir("sourceSets"));
+        var mergeSourceSets = this.problems.test("net.minecraftforge.gradle.merge-source-sets");
+        project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().configureEach(sourceSet -> {
+            if (mergeSourceSets) {
+                // This is documented in SourceSetOutput's javadoc comment
+                var unifiedDir = sourceSetsDir.dir(sourceSet.getName());
+                sourceSet.getOutput().setResourcesDir(unifiedDir);
+                sourceSet.getJava().getDestinationDirectory().set(unifiedDir);
+            }
+
+            project.getPluginManager().withPlugin("eclipse", eclipsePlugin -> {
+                var eclipse = project.getExtensions().getByType(EclipseModel.class);
+                if (mergeSourceSets)
+                    eclipse.getClasspath().setDefaultOutputDir(sourceSetsDir.getAsFile().get());
+                else
+                    System.out.println("WARNING: Source set will not be merged for " + sourceSet.getName() + "!");
+            });
+        });
+
         project.afterEvaluate(p -> {
             // TODO Add mappings as a dependency to FG7???
             // Add mappings so that it can be used by reflection tools.
@@ -263,9 +291,15 @@ public abstract class ForgeDevExtension {
                     });
                 })
             );
+            var minecraftExtraDependency = project.getDependencies().create(
+                "net.minecraft:client-extra:%s".formatted(legacyMcp.getVersion().get()),
+                Closures.<ExternalModuleDependency>consumer(dependency -> dependency.setTransitive(false))
+            );
             syncMavenizer.configure(task -> task.getArtifact().set(legacyMcp.getVersion()));
+            syncMavenizerForExtra.configure(task -> task.getArtifact().set(legacyMcp.getVersion().map(v -> "net.minecraft:client-extra:" + v)));
             syncMappingsMaven.configure(task -> task.getVersion().set(legacyPatcher.getMappingVersion()));
             project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, minecraftDependency);
+            project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, minecraftExtraDependency);
             project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, mappingsDependency);
             mappingsConfiguration.withDependencies(d -> d.add(mappingsDependency));
 
@@ -315,6 +349,10 @@ public abstract class ForgeDevExtension {
                     userdevConfig.configure(t -> t.getATs().from(f));
                 }
             }
+
+            setupMCP.configure(task -> {
+                task.getSideAnnotationStripperConfig().fileProvider(getProviders().provider(() -> legacyPatcher.getSideAnnotationStrippers().getSingleFile()));
+            });
 
             // TODO SAS! Used MCPFunction in FG6, I DON'T GIVE A SHIT RIGHT NOW!!!
 
@@ -402,6 +440,35 @@ public abstract class ForgeDevExtension {
                     filterNew.configure(task -> {
                         task.getSrg().set(srg.flatMap(LegacyGenerateSRG::getOutput));
                         task.getBlacklist().builtBy(rawJoinedJar);
+                    });
+                }
+            }
+
+            // TODO Clean up please
+            record SimpleModuleIdentifier(String getGroup, String getName) implements ModuleIdentifier {
+                SimpleModuleIdentifier() {
+                    this("net.minecraft", "joined");
+                }
+            }
+
+            if (!legacyPatcher.runs.isEmpty()) {
+                var genEclipseRuns = project.getTasks().register("genEclipseRuns", task -> {
+                    task.setGroup("IDE");
+                    task.setDescription("Generates the run configuration launch files for Eclipse.");
+                });
+
+                File eclipseOutputDir;
+                var eclipse = project.getExtensions().findByType(EclipseModel.class);
+                if (eclipse != null) {
+                    eclipse.synchronizationTasks(genEclipseRuns);
+                    eclipseOutputDir = eclipse.getClasspath().getDefaultOutputDir();
+                } else {
+                    eclipseOutputDir = getProjectLayout().getProjectDirectory().dir("bin").getAsFile();
+                }
+
+                for (var sourceSet : List.of(main.get(), java.getSourceSets().named(SourceSet.TEST_SOURCE_SET_NAME).get())) {
+                    legacyPatcher.runs.forEach(options -> {
+                        var task = SlimeLauncherExec.register(project, sourceSet, options, new SimpleModuleIdentifier(), legacyMcp.getVersion().get(), eclipseOutputDir);
                     });
                 }
             }

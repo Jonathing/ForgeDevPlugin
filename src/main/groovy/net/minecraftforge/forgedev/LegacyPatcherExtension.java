@@ -14,6 +14,7 @@ import org.gradle.api.provider.Property;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,9 +36,8 @@ public abstract class LegacyPatcherExtension extends LegacyMinecraftExtension {
     @Nullable
     private PatcherConfig.V2.DataFunction processor;
 
-    public LegacyPatcherExtension(final Project project) {
-        super(project);
-    }
+    @Inject
+    public LegacyPatcherExtension() { }
 
     public abstract Property<Project> getParent();
 

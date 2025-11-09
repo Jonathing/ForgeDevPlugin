@@ -4,6 +4,15 @@
  */
 package net.minecraftforge.forgedev;
 
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FromString;
+import net.minecraftforge.forgedev.tasks.launcher.SlimeLauncherOptions;
+import net.minecraftforge.forgedev.tasks.launcher.SlimeLauncherOptionsImpl;
+import net.minecraftforge.gradleutils.shared.Closures;
+import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.model.ObjectFactory;
@@ -16,23 +25,20 @@ import java.util.Map;
 
 @VisibleForTesting
 public abstract class LegacyMinecraftExtension {
-    protected final Project project;
     protected final ConfigurableFileCollection accessTransformers = this.getObjects().fileCollection();
 
     private final Property<String> mapping = this.getObjects().property(String.class);
 
+    final NamedDomainObjectContainer<SlimeLauncherOptionsImpl> runs = this.getObjects().domainObjectContainer(SlimeLauncherOptionsImpl.class);
+
     protected abstract @Inject ObjectFactory getObjects();
 
+    protected abstract @Inject Project getProject();
+
     @Inject
-    public LegacyMinecraftExtension(Project project) {
-        this.project = project;
+    public LegacyMinecraftExtension() {
         this.mapping.set(getMappingChannel().zip(getMappingVersion(), (ch, ver) -> ch + '_' + ver));
     }
-
-    public Project getProject() {
-        return project;
-    }
-
 
     public abstract Property<String> getMappingChannel();
 
@@ -61,6 +67,22 @@ public abstract class LegacyMinecraftExtension {
         }
 
         mappings(channel.toString(), version.toString());
+    }
+
+    public NamedDomainObjectContainer<? extends SlimeLauncherOptions> getRuns() {
+        return this.runs;
+    }
+
+    public void runs(
+        @DelegatesTo(NamedDomainObjectContainer.class)
+        @ClosureParams(value = FromString.class, options = "org.gradle.api.NamedDomainObjectContainer<net.minecraftforge.forgedev.tasks.launcher.SlimeLauncherOptions>")
+        Closure<?> closure
+    ) {
+        this.runs.configure(closure);
+    }
+
+    public void runs(Action<? super NamedDomainObjectContainer<? extends SlimeLauncherOptions>> action) {
+        this.runs(Closures.action(this, action));
     }
 
     public ConfigurableFileCollection getAccessTransformers() {

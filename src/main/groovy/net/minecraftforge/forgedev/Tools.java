@@ -35,6 +35,7 @@ public final class Tools {
     public static final Tool JARCOMPATIBILITYCHECKER = tool(Constants.JARCOMPATIBILITYCHECKER_NAME, Constants.JARCOMPATIBILITYCHECKER_VERSION, Constants.JARCOMPATIBILITYCHECKER_DL_URL, Constants.JARCOMPATIBILITYCHECKER_JAVA, Constants.JARCOMPATIBILITYCHECKER_MAIN);
     public static final Tool FART = tool(Constants.FART_NAME, Constants.FART_VERSION, Constants.FART_DL_URL, Constants.FART_JAVA, Constants.FART_MAIN);
     public static final Tool SRG2SRC = tool(Constants.SRG2SRC_NAME, Constants.SRG2SRC_VERSION, Constants.SRG2SRC_DL_URL, Constants.SRG2SRC_JAVA, Constants.SRG2SRC_MAIN);
+    public static final Tool SLIMELAUNCHER = tool(Constants.SLIMELAUNCHER_NAME, Constants.SLIMELAUNCHER_VERSION, Constants.SLIMELAUNCHER_DL_URL, Constants.SLIMELAUNCHER_JAVA_VERSION, Constants.SLIMELAUNCHER_MAIN);
 
     // LIBRARIES
     public static final Tool SRGUTILS = tool(Constants.SRGUTILS_NAME, Constants.SRGUTILS_VERSION, Constants.SRGUTILS_DL_URL, Constants.SRGUTILS_JAVA);
