@@ -44,6 +44,7 @@ import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.plugins.ide.eclipse.model.EclipseModel;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -218,6 +219,7 @@ public abstract class ForgeDevExtension {
         // TODO This may conflict with normal sources jar if enabled
         //      Remember that we want to generalize ForgeDev to be used by both Forge and ForgeLoader
         var srgSourcesJar = tasks.register("legacySourcesJar", Jar.class, task -> {
+            task.setGroup(LifecycleBasePlugin.BUILD_GROUP);
             task.setOnlyIf(t -> applyRangeMap.flatMap(ApplyRangeMap::getOutput).map(rf -> rf.getAsFile().exists()).getOrElse(false));
             task.dependsOn(applyRangeMap);
             task.from(project.zipTree(applyRangeMap.flatMap(ApplyRangeMap::getOutput)));
@@ -229,6 +231,7 @@ public abstract class ForgeDevExtension {
          *   Should only be OUR classes, not parent patcher projects.
          */
         var universalJar = tasks.register("universalJar", Jar.class, task -> {
+            task.setGroup(LifecycleBasePlugin.BUILD_GROUP);
             task.dependsOn(filterNew);
             task.from(project.zipTree(filterNew.flatMap(LegacyFilterNewJar::getOutput)));
             task.from(java.getSourceSets().named(SourceSet.MAIN_SOURCE_SET_NAME).map(SourceSet::getResources));
@@ -246,6 +249,7 @@ public abstract class ForgeDevExtension {
          *   at2.cfg
          */
         var userdevJar = tasks.register("userdevJar", Jar.class, task -> {
+            task.setGroup(LifecycleBasePlugin.BUILD_GROUP);
             task.dependsOn(srgSourcesJar, bakePatches);
             task.setOnlyIf(t -> legacyPatcher.isSrgPatches());
             task.from(userdevConfig.flatMap(GeneratePatcherConfigV2::getOutput), e -> e.rename(f -> "config.json"));
@@ -253,6 +257,9 @@ public abstract class ForgeDevExtension {
             task.from(project.zipTree(bakePatches.flatMap(BakePatches::getOutput)), e -> e.into("patches/"));
             task.getArchiveClassifier().set("userdev");
         });
+        var assemble = tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME, task ->
+            task.dependsOn(universalJar, userdevJar)
+        );
         var release = tasks.register("release", task -> task.dependsOn(srgSourcesJar, universalJar, userdevJar));
 
         var sourceSetsDir = this.getObjects().directoryProperty().value(this.getProjectLayout().getBuildDirectory().dir("sourceSets"));
@@ -285,7 +292,7 @@ public abstract class ForgeDevExtension {
                 "net.minecraft:joined:%s".formatted(legacyMcp.getVersion().get()),
                 Closures.<ExternalModuleDependency>consumer(dependency -> {
                     dependency.attributes(a -> {
-                        a.attributeProvider(OS, getProviders().of(OSValueSource.class, spec -> {}));
+                        a.attributeProvider(OS, getProviders().of(OSValueSource.class, spec -> { }));
                         a.attributeProvider(MAPPINGS_CHANNEL, legacyPatcher.getMappingChannel());
                         a.attributeProvider(MAPPINGS_VERSION, legacyPatcher.getMappingVersion());
                     });

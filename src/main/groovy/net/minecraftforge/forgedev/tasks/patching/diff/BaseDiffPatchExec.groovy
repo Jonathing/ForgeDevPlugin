@@ -75,7 +75,18 @@ import javax.inject.Inject
         if (this.modifiedPathPrefix.present)
             this.args('--modified-path-prefix', this.modifiedPathPrefix.get())
         if (this.lineEndings.present)
-            this.args('--line-endings', this.lineEndings.get())
+            this.args('--line-endings', this.lineEndings.map {
+                switch (it) {
+                    case '\r':
+                        return 'CR'
+                    case '\n':
+                        return 'LF'
+                    case '\r\n':
+                        return 'CRLF'
+                    default:
+                        return it
+                }
+            }.get())
         //endregion
 
         super.addArguments()
