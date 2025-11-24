@@ -68,6 +68,8 @@ public abstract class SlimeLauncherExec extends JavaExec implements ForgeDevTask
                 .minus(sourceSetOutputs)
                 .plus(eclipseOutputs);
 
+            task.getSourceSetName().set(sourceSet.getName());
+
             var caches = task.getObjects().directoryProperty().value(task.globalCaches().dir("slime-launcher/cache/%s".formatted(version)));
             task.getCacheDir().set(caches.map(task.problems.ensureFileLocation()));
             task.getMetadataZip().set(metadataZip);
