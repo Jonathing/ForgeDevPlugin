@@ -21,6 +21,7 @@ import net.minecraftforge.forgedev.tasks.patching.binary.CreateBinPatches;
 import net.minecraftforge.forgedev.tasks.patching.diff.ApplyPatches;
 import net.minecraftforge.forgedev.tasks.patching.diff.BakePatches;
 import net.minecraftforge.forgedev.tasks.patching.diff.GeneratePatches;
+import net.minecraftforge.forgedev.tasks.sas.CreateFakeSASPatches;
 import net.minecraftforge.forgedev.tasks.srg2source.ApplyRangeMap;
 import net.minecraftforge.forgedev.tasks.srg2source.ExtractRangeMap;
 import net.minecraftforge.gradleutils.shared.Closures;
@@ -32,7 +33,9 @@ import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.FileSystemLocationProperty;
 import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
@@ -46,6 +49,7 @@ import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.plugins.ide.eclipse.model.EclipseModel;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.inject.Inject;
@@ -209,6 +213,7 @@ public abstract class ForgeDevExtension {
             task.getCreate().from(reobfJar.flatMap(LegacyReobfuscateJar::getOutput));
             task.getOutput().convention(project.getLayout().getBuildDirectory().dir(task.getName()).map(d -> d.file("server.lzma")));
         });
+        var genBinPatchesTasks = List.of(genJoinedBinPatches, genClientBinPatches, genServerBinPatches);
         var genBinPatches = tasks.register("genBinPatches", task -> task.dependsOn(genJoinedBinPatches, genClientBinPatches, genServerBinPatches));
 
         var filterNew = tasks.register("filterJarNew", LegacyFilterNewJar.class, task -> task.getInput().set(reobfJar.flatMap(LegacyReobfuscateJar::getOutput)));
@@ -261,7 +266,6 @@ public abstract class ForgeDevExtension {
         var assemble = tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME, task ->
             task.dependsOn(universalJar, userdevJar)
         );
-        var release = tasks.register("release", task -> task.dependsOn(srgSourcesJar, universalJar, userdevJar));
 
         var sourceSetsDir = this.getObjects().directoryProperty().value(this.getProjectLayout().getBuildDirectory().dir("sourceSets"));
         var mergeSourceSets = this.problems.test("net.minecraftforge.gradle.merge-source-sets");
@@ -358,11 +362,24 @@ public abstract class ForgeDevExtension {
                 }
             }
 
-            setupMCP.configure(task -> {
-                task.getSideAnnotationStripperConfig().fileProvider(getProviders().provider(() -> legacyPatcher.getSideAnnotationStrippers().getSingleFile()));
-            });
+            if (!legacyPatcher.getSideAnnotationStrippers().isEmpty()) {
+                setupMCP.configure(task -> {
+                    // TODO do this better
+                    task.getSideAnnotationStripperConfig().fileProvider(getProviders().provider(() -> legacyPatcher.getSideAnnotationStrippers().getSingleFile()));
+                });
 
-            // TODO SAS! Used MCPFunction in FG6, I DON'T GIVE A SHIT RIGHT NOW!!!
+                userdevConfig.configure(task -> task.getSASs().from(legacyPatcher.getSideAnnotationStrippers()));
+                for (var sas : legacyPatcher.getSideAnnotationStrippers()) {
+                    userdevJar.configure(task -> task.from(sas, copy -> copy.into("sas/")));
+                }
+
+                var fakePatches = tasks.register("createFakeSASPatches", CreateFakeSASPatches.class, task ->
+                    task.getFiles().from(legacyPatcher.getSideAnnotationStrippers())
+                );
+                for (var genBinPatchesTask : genBinPatchesTasks) {
+                    genBinPatchesTask.configure(task -> task.getPatches().from(fakePatches.flatMap(CreateFakeSASPatches::getOutput)));
+                }
+            }
 
             if (!legacyPatcher.getExtraMappings().isEmpty()) {
                 for (var extraMapping : legacyPatcher.getExtraMappings()) {
@@ -400,6 +417,13 @@ public abstract class ForgeDevExtension {
             if (legacyPatcher.isSrgPatches()) {
                 genPatches.configure(task -> task.getModified().set(applyRangeMapBase.flatMap(ApplyRangeMap::getOutput)));
             } else {
+                // Remap the 'clean' with out mappings.
+                TaskProvider<LegacyApplyMappings> toMCPClean = tasks.register("srg2mcpClean", LegacyApplyMappings.class, task -> {
+                    task.getInput().set(legacyPatcher.getCleanSrc());
+                    task.getMappingsZip().fileProvider(mappingsZipFile);
+                    task.getLambdas().set(false);
+                });
+
                 var dirtyZip = tasks.register("patchedZip", Zip.class, task -> {
                     task.from(legacyPatcher.getPatchedSrc());
                     task.getArchiveFileName().set("output.zip");
@@ -408,13 +432,11 @@ public abstract class ForgeDevExtension {
 
                 // Fixup the inputs.
                 applyPatches.configure(task -> {
-                    //task.getInput().set(toMCPClean.flatMap(LegacyApplyMappings::getOutput));
-                    //task.getInput().fileProvider(applyPatches.flatMap(a -> a.getInput().getAsFile()));
-                    task.getArchiveBase().set("zip");
+                    task.dependsOn(toMCPClean);
+                    task.getInput().set(toMCPClean.flatMap(LegacyApplyMappings::getOutput));
                 });
                 genPatches.configure(task -> {
-                    //task.getInput().set(toMCPClean.flatMap(LegacyApplyMappings::getOutput));
-                    task.getInput().fileProvider(applyPatches.flatMap(a -> a.getInput().getAsFile()));
+                    task.getInput().set(toMCPClean.flatMap(LegacyApplyMappings::getOutput));
                     task.getModified().set(dirtyZip.flatMap(AbstractArchiveTask::getArchiveFile));
                 });
 
