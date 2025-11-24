@@ -28,9 +28,9 @@ abstract class ApplyRangeMap extends S2SExec {
     abstract @Input @Optional Property<Boolean> getKeepImports()
     abstract @Input @Optional @Deprecated Property<Boolean> getAnnotate()
 
-    abstract @Input Property<Boolean> getSortImports()
-    abstract @Input Property<Boolean> getGuessLambdas()
-    abstract @Input Property<Boolean> getGuessLocals()
+    abstract @Input @Optional Property<Boolean> getSortImports()
+    abstract @Input @Optional Property<Boolean> getGuessLambdas()
+    abstract @Input @Optional Property<Boolean> getGuessLocals()
 
     @Inject
     ApplyRangeMap() {

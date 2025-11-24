@@ -194,6 +194,7 @@ public abstract class ForgeDevExtension {
             task.getInput().set(jar.flatMap(Jar::getArchiveFile));
             // TODO Optimize this to use a detached configuraiton
             task.getLibraries().from(project.getConfigurations().named(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME));
+            task.getOutput().convention(task.getDefaultOutputFile());
         });
 
         var genJoinedBinPatches = tasks.register("genJoinedBinPatches", CreateBinPatches.class, task -> {

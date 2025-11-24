@@ -37,9 +37,9 @@ import javax.inject.Inject
     }
 
     protected final String parseSourceCompatibility(JavaVersion javaVersion) {
-        final version = javaVersion.toString()
-        final split = version.split('\\.')
-        if (split.length > 0 && split[1].toInteger() < SRC_COMPAT_MIN) {
+        int version = javaVersion.ordinal() + 1
+
+        if (version < SRC_COMPAT_MIN) {
             this.logger.warn('WARNING: {} source compatibility {} is lower than minimum of {}', this.identityPath, version, SRC_COMPAT_MIN_STR)
             return SRC_COMPAT_MIN_STR
         } else if (version.toInteger() > SRC_COMPAT_MAX) {

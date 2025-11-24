@@ -75,7 +75,7 @@ abstract class LegacyReobfuscateJar extends ToolExec {
 
         var argsList = [
             '--input', this.input.get().asFile.absolutePath,
-            '--srg', this.srg.get().asFile.absolutePath,
+            '--map', this.srg.get().asFile.absolutePath,
             '--output', this.temporaryOutput.absolutePath
         ]
 
@@ -92,7 +92,7 @@ abstract class LegacyReobfuscateJar extends ToolExec {
 
     @Override
     protected ExecResult exec() {
-        var result = super.exec()
+        var result = super.exec().rethrowFailure().assertNormalExitValue()
 
         final work = this.workerExecutor.classLoaderIsolation {
             it.classpath.from(this.workerActionClasspath)

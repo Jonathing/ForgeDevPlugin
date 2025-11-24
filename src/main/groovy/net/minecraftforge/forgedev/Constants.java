@@ -18,7 +18,7 @@ final class Constants {
     static final int MAVENIZER_JAVA = 25;
 
     static final String DIFFPATCH_NAME = "diffpatch";
-    static final String DIFFPATCH_VERSION = "2.0.1.39";
+    static final String DIFFPATCH_VERSION = "2.1.0.42";
     static final String DIFFPATCH_DL_URL = MAVEN_CENTRAL + "io/codechicken/DiffPatch/" + DIFFPATCH_VERSION + "/DiffPatch-" + DIFFPATCH_VERSION + "-all.jar";
     static final String DIFFPATCH_MAIN = "io.codechicken.diffpatch.cli.DiffPatchCli";
     static final int DIFFPATCH_JAVA = 8;
@@ -30,7 +30,7 @@ final class Constants {
     static final int BINPATCH_JAVA = 8;
 
     static final String FART_NAME = "fart";
-    static final String FART_VERSION = "1.1.0";
+    static final String FART_VERSION = "1.1.1";
     static final String FART_DL_URL = FORGE_MAVEN + "net/minecraftforge/ForgeAutoRenamingTool/" + FART_VERSION + "/ForgeAutoRenamingTool-" + FART_VERSION + "-all.jar";
     static final String FART_MAIN = "net.minecraftforge.fart.Main";
     static final int FART_JAVA = 8;
