@@ -23,7 +23,7 @@ public abstract class ForgeDevPlugin extends EnhancedPlugin<ExtensionAware> {
 
     @Inject
     public ForgeDevPlugin() {
-        super(NAME, DISPLAY_NAME);
+        super(NAME, DISPLAY_NAME, "fdtools");
     }
 
     @Override
