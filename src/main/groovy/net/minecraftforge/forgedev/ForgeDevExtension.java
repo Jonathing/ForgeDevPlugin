@@ -8,6 +8,7 @@ import net.minecraftforge.forgedev.tasks.compat.LegacyExtractZip;
 import net.minecraftforge.forgedev.tasks.compat.LegacyMergeFilesTask;
 import net.minecraftforge.forgedev.tasks.filtering.LegacyFilterNewJar;
 import net.minecraftforge.forgedev.tasks.generation.GeneratePatcherConfigV2;
+import net.minecraftforge.forgedev.tasks.installertools.DownloadMappings;
 import net.minecraftforge.forgedev.tasks.launcher.SlimeLauncherExec;
 import net.minecraftforge.forgedev.tasks.mappings.LegacyApplyMappings;
 import net.minecraftforge.forgedev.tasks.mappings.LegacyGenerateSRG;
@@ -111,6 +112,10 @@ public abstract class ForgeDevExtension {
         // needs to exist because it's currently referenced in the buildscript
         // TODO STOP DOING THAT SHIT
         var setupMCP = tasks.register("setupMCP", MavenizerMCPSetup.class);
+        var setupMCPSrg = tasks.register("setupMCPSrg", MavenizerMCPSetup.class, task -> task.getRename().set(false));
+
+        var downloadClientMappings = tasks.register("downloadClientMappings", DownloadMappings.class, task -> task.getSide().set("client"));
+        var downloadServerMappings = tasks.register("downloadServerMappings", DownloadMappings.class, task -> task.getSide().set("server"));
 
         var syncMavenizer = tasks.register("syncMavenizer", MavenizerMCPMaven.class);
         var syncMavenizerForExtra = tasks.register("syncMavenizerForExtra", MavenizerMCPMaven.class);
@@ -296,6 +301,9 @@ public abstract class ForgeDevExtension {
         });
 
         project.afterEvaluate(p -> {
+            downloadClientMappings.configure(task -> task.getVersion().set(legacyPatcher.getMappingVersion()));
+            downloadServerMappings.configure(task -> task.getVersion().set(legacyPatcher.getMappingVersion()));
+
             // TODO Add mappings as a dependency to FG7???
             // Add mappings so that it can be used by reflection tools.
             // net.minecraft:mappings_CHANNEL:VERSION@zip
@@ -341,6 +349,10 @@ public abstract class ForgeDevExtension {
                 task.getPipeline().set(legacyMcp.getPipeline());
                 task.getArtifact().set(legacyMcp.getConfig());
             });
+            setupMCPSrg.configure(task -> {
+                task.getPipeline().set(legacyMcp.getPipeline());
+                task.getArtifact().set(legacyMcp.getConfig());
+            });
             legacyPatcher.getCleanSrc().set(setupMCP.flatMap(MavenizerMCPSetup::getOutput));
             applyPatches.configure(task -> task.getInput().convention(legacyPatcher.getCleanSrc()));
             genPatches.configure(task -> task.getInput().convention(legacyPatcher.getCleanSrc()));
@@ -370,6 +382,10 @@ public abstract class ForgeDevExtension {
                     task.dependsOn(mergeATs);
                     task.getAccessTransformerConfig().set(mergeATs.flatMap(LegacyMergeFilesTask::getOutput));
                 });
+                setupMCPSrg.configure(task -> {
+                    task.dependsOn(mergeATs);
+                    task.getAccessTransformerConfig().set(mergeATs.flatMap(LegacyMergeFilesTask::getOutput));
+                });
                 for (var f : legacyPatcher.getAccessTransformers()) {
                     userdevJar.configure(t -> t.from(f, e -> e.into("ats/")));
                     userdevConfig.configure(t -> t.getATs().from(f));
@@ -378,6 +394,10 @@ public abstract class ForgeDevExtension {
 
             if (!legacyPatcher.getSideAnnotationStrippers().isEmpty()) {
                 setupMCP.configure(task -> {
+                    // TODO do this better
+                    task.getSideAnnotationStripperConfig().fileProvider(getProviders().provider(() -> legacyPatcher.getSideAnnotationStrippers().getSingleFile()));
+                });
+                setupMCPSrg.configure(task -> {
                     // TODO do this better
                     task.getSideAnnotationStripperConfig().fileProvider(getProviders().provider(() -> legacyPatcher.getSideAnnotationStrippers().getSingleFile()));
                 });
