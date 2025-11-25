@@ -339,7 +339,8 @@ public abstract class ForgeDevExtension {
             var extractSrg = tasks.register("extractSrg", MavenizerMCPDataTask.class, task -> task.getArtifact().set(legacyMcp.getConfig()));
             createMcp2Srg.configure(task -> task.getMcpSrgData().convention(extractSrg.flatMap(MavenizerMCPDataTask::getOutput)));
 
-            // TODO Configure filterNew
+            filterNew.configure(task -> task.getBlacklist().from(jar.flatMap(AbstractArchiveTask::getArchiveFile)));
+
             tasks.withType(LegacyGenerateSRG.class, task -> task.getMappingsZip().fileProvider(mappingsZipFile));
 
             createMcp2Obf.configure(task -> task.getMcpSrgData().convention(createMcp2Srg.flatMap(LegacyGenerateSRG::getMcpSrgData)));

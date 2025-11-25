@@ -28,6 +28,8 @@ import javax.inject.Inject
     S2SExec() {
         super(Tools.SRG2SRC)
 
+        this.preferToolchainJvm.set(true)
+
         this.standardOutputLogLevel.set(LogLevel.INFO)
     }
 
