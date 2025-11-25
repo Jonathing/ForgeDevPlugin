@@ -12,7 +12,7 @@ final class Constants {
     static final String MAVEN_CENTRAL = "https://repo1.maven.org/maven2/";
 
     static final String MAVENIZER_NAME = "mavenizer";
-    static final String MAVENIZER_VERSION = "0.4.4";
+    static final String MAVENIZER_VERSION = "0.4.9";
     static final String MAVENIZER_DL_URL = FORGE_MAVEN + "net/minecraftforge/minecraft-mavenizer/" + MAVENIZER_VERSION + "/minecraft-mavenizer-" + MAVENIZER_VERSION + ".jar";
     static final String MAVENIZER_MAIN = "net.minecraftforge.mcmaven.cli.Main";
     static final int MAVENIZER_JAVA = 25;
@@ -64,7 +64,7 @@ final class Constants {
     static final int FASTCSV_JAVA = 11;
 
     static final String SLIMELAUNCHER_NAME = "slimelauncher";
-    static final String SLIMELAUNCHER_VERSION = "0.1.6";
+    static final String SLIMELAUNCHER_VERSION = "0.1.8";
     static final String SLIMELAUNCHER_DL_URL = "https://maven.minecraftforge.net/net/minecraftforge/slime-launcher/" + SLIMELAUNCHER_VERSION + "/slime-launcher-" + SLIMELAUNCHER_VERSION + ".jar";
     static final int SLIMELAUNCHER_JAVA_VERSION = 8;
     static final String SLIMELAUNCHER_MAIN = "net.minecraftforge.launcher.Main";
