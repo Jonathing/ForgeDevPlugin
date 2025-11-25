@@ -196,7 +196,7 @@ public abstract class ForgeDevExtension {
 
         var reobfJar = tasks.register("reobfJar", LegacyReobfuscateJar.class, task -> {
             task.getInput().set(jar.flatMap(Jar::getArchiveFile));
-            // TODO Optimize this to use a detached configuraiton
+            // TODO Optimize this to use a detached configuration
             task.getLibraries().from(project.getConfigurations().named(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME));
             task.getOutput().convention(task.getDefaultOutputFile());
         });

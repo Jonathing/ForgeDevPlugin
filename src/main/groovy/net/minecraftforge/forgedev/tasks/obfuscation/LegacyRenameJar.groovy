@@ -51,6 +51,8 @@ abstract class LegacyRenameJar extends ToolExec {
     LegacyRenameJar() {
         super(Tools.FART)
 
+        this.preferToolchainJvm.set(true)
+
         this.workerActionClasspath.from(
             this.getTool(Tools.SRGUTILS).classpath
         )

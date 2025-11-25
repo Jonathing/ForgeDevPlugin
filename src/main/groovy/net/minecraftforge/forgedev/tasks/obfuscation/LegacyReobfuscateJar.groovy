@@ -55,6 +55,8 @@ abstract class LegacyReobfuscateJar extends ToolExec {
     LegacyReobfuscateJar() {
         super(Tools.FART)
 
+        this.preferToolchainJvm.set(true)
+
         this.workerActionClasspath.from(
             this.getTool(Tools.SRGUTILS).classpath
         )
