@@ -429,7 +429,7 @@ public abstract class ForgeDevExtension {
             //UserDev Config Default Values
             userdevConfig.configure(task -> {
                 task.getMCPConfig().set(legacyMcp.getConfig());
-                task.getBinpatcherVersion().set(Constants.BINPATCH_VERSION);
+                task.getBinpatcherVersion().set("net.minecraft:binarypatcher:" + Constants.BINPATCH_VERSION + ":fatjar");
                 task.getBinpatcherArguments().addAll("--clean", "{clean}", "--output", "{output}", "--apply", "{patch}");
                 task.getUniversal().convention(universalJar.flatMap(t ->
                     t.getArchiveBaseName().flatMap(baseName ->

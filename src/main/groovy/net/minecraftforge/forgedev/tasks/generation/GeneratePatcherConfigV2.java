@@ -65,12 +65,21 @@ public abstract class GeneratePatcherConfigV2 extends DefaultTask implements For
     public abstract @Input Property<String> getBinpatcherVersion();
     public abstract @Input ListProperty<String> getBinpatcherArguments();
 
+    public abstract @Input @Optional ListProperty<String> getExtraRuntimeDeps();
+    public abstract @Input @Optional ListProperty<String> getExtraCompileDeps();
+    public abstract @Input @Optional ListProperty<String> getExtraAnnotationProcessorDeps();
+
     protected abstract @Inject ObjectFactory getObjects();
 
     @Inject
     public GeneratePatcherConfigV2() {
-        this.getSourceFileEncoding().convention(StandardCharsets.UTF_8.name());
         this.getOutput().convention(this.getDefaultOutputFile("json"));
+
+        this.getPatchesOriginalPrefix().convention("a/");
+        this.getPatchesModifiedPrefix().convention("b/");
+        this.getSourceFileEncoding().convention(StandardCharsets.UTF_8.name());
+        this.getInject().convention("inject/");
+        this.getPatches().convention("patches/");
     }
 
     @TaskAction
@@ -85,9 +94,12 @@ public abstract class GeneratePatcherConfigV2 extends DefaultTask implements For
         config.inject = this.getInject().filter(Util.IS_NOT_BLANK).getOrNull();
         config.libraries = this.getLibraries().get();
         config.ats = DefaultGroovyMethods.collect(this.getATs(), Closures.<File, String>function(f -> "ats/" + f.getName()));
+        if (config.ats.isEmpty()) config.ats = null;
         config.sass = DefaultGroovyMethods.collect(this.getSASs(), Closures.<File, String>function(f -> "sas/" + f.getName()));
+        if (config.sass.isEmpty()) config.sass = null;
         config.srgs = DefaultGroovyMethods.collect(this.getSRGs(), Closures.<File, String>function(f -> "srgs/" + f.getName()));
         config.srgs.addAll(this.getSRGLines().get());
+        if (config.srgs.isEmpty()) config.srgs = null;
         config.mcp = this.getMCPConfig().filter(Util.IS_NOT_BLANK).get();
 
         config.runs = this.getRuns().get();
@@ -100,12 +112,18 @@ public abstract class GeneratePatcherConfigV2 extends DefaultTask implements For
             var v2 = (PatcherConfig.V2) (config = new PatcherConfig.V2(config));
             v2.spec = 2;
             v2.modules = this.getModules().get();
+            if (v2.modules.isEmpty()) v2.modules = null;
             v2.processor = this.getProcessor().getOrNull();
             v2.patchesOriginalPrefix = this.getPatchesOriginalPrefix().filter(Util.IS_NOT_BLANK).getOrNull();
             v2.patchesModifiedPrefix = this.getPatchesModifiedPrefix().filter(Util.IS_NOT_BLANK).getOrNull();
             v2.notchObf = this.getNotchObf().filter(b -> b).getOrNull();
             v2.sourceFileCharset = this.getSourceFileEncoding().filter(Util.IS_NOT_BLANK).getOrNull();
             v2.universalFilters = this.getUniversalFilters().get();
+            if (v2.universalFilters.isEmpty()) v2.universalFilters = null;
+            v2.extraDependencies = new PatcherConfig.V2.ScopedDependencies();
+            v2.extraDependencies.compileOnly = new ArrayList<>(getExtraCompileDeps().get());
+            v2.extraDependencies.runtimeOnly = new ArrayList<>(getExtraRuntimeDeps().get());
+            v2.extraDependencies.annotationProcessor = new ArrayList<>(getExtraAnnotationProcessorDeps().get());
         }
 
         JsonData.toJson(config, this.getOutput().getAsFile().get());
