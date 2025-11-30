@@ -429,7 +429,7 @@ public abstract class ForgeDevExtension {
             //UserDev Config Default Values
             userdevConfig.configure(task -> {
                 task.getMCPConfig().set(legacyMcp.getConfig());
-                task.getBinpatcherVersion().set("net.minecraft:binarypatcher:" + Constants.BINPATCH_VERSION + ":fatjar");
+                task.getBinpatcherVersion().convention("net.minecraftforge:binarypatcher:" + Constants.BINPATCH_VERSION + ":fatjar");
                 task.getBinpatcherArguments().addAll("--clean", "{clean}", "--output", "{output}", "--apply", "{patch}");
                 task.getUniversal().convention(universalJar.flatMap(t ->
                     t.getArchiveBaseName().flatMap(baseName ->
@@ -443,8 +443,8 @@ public abstract class ForgeDevExtension {
                             t.getArchiveExtension().map(jarExt ->
                                 project.getGroup().toString() + ':' + baseName + ':' + project.getVersion() + ':' + classifier + '@' + jarExt
                             )))));
-                task.getPatchesOriginalPrefix().convention(genPatches.flatMap(GeneratePatches::getBasePathPrefix));
-                task.getPatchesModifiedPrefix().convention(genPatches.flatMap(GeneratePatches::getModifiedPathPrefix));
+                task.getPatchesOriginalPrefix().set(genPatches.flatMap(GeneratePatches::getBasePathPrefix));
+                task.getPatchesModifiedPrefix().set(genPatches.flatMap(GeneratePatches::getModifiedPathPrefix));
                 task.getNotchObf().set(legacyPatcher.getNotchObf());
             });
 

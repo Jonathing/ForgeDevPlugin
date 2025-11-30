@@ -38,6 +38,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 public abstract class GeneratePatcherConfigV2 extends DefaultTask implements ForgeDevTask {
+    private static final String DEFAULT_PATCHES_PREFIX_ORIGINAL = "a/";
+    private static final String DEFAULT_PATCHES_PREFIX_MODIFIED = "b/";
+
     public abstract @OutputFile RegularFileProperty getOutput();
 
     public abstract @Input @Optional Property<PatcherConfig.V2.DataFunction> getProcessor();
@@ -75,8 +78,8 @@ public abstract class GeneratePatcherConfigV2 extends DefaultTask implements For
     public GeneratePatcherConfigV2() {
         this.getOutput().convention(this.getDefaultOutputFile("json"));
 
-        this.getPatchesOriginalPrefix().convention("a/");
-        this.getPatchesModifiedPrefix().convention("b/");
+        this.getPatchesOriginalPrefix().convention(DEFAULT_PATCHES_PREFIX_ORIGINAL);
+        this.getPatchesModifiedPrefix().convention(DEFAULT_PATCHES_PREFIX_MODIFIED);
         this.getSourceFileEncoding().convention(StandardCharsets.UTF_8.name());
         this.getInject().convention("inject/");
         this.getPatches().convention("patches/");
@@ -114,8 +117,8 @@ public abstract class GeneratePatcherConfigV2 extends DefaultTask implements For
             v2.modules = this.getModules().get();
             if (v2.modules.isEmpty()) v2.modules = null;
             v2.processor = this.getProcessor().getOrNull();
-            v2.patchesOriginalPrefix = this.getPatchesOriginalPrefix().filter(Util.IS_NOT_BLANK).getOrNull();
-            v2.patchesModifiedPrefix = this.getPatchesModifiedPrefix().filter(Util.IS_NOT_BLANK).getOrNull();
+            v2.patchesOriginalPrefix = this.getPatchesOriginalPrefix().filter(Util.IS_NOT_BLANK).getOrElse(DEFAULT_PATCHES_PREFIX_ORIGINAL);
+            v2.patchesModifiedPrefix = this.getPatchesModifiedPrefix().filter(Util.IS_NOT_BLANK).getOrElse(DEFAULT_PATCHES_PREFIX_MODIFIED);
             v2.notchObf = this.getNotchObf().filter(b -> b).getOrNull();
             v2.sourceFileCharset = this.getSourceFileEncoding().filter(Util.IS_NOT_BLANK).getOrNull();
             v2.universalFilters = this.getUniversalFilters().get();
@@ -133,8 +136,8 @@ public abstract class GeneratePatcherConfigV2 extends DefaultTask implements For
         return this.getNotchObf().getOrElse(false)
             || this.getProcessor().isPresent()
             || this.getUniversalFilters().isPresent()
-            || !"a/".equals(getPatchesOriginalPrefix().get())
-            || !"b/".equals(getPatchesModifiedPrefix().get());
+            || !"a/".equals(getPatchesOriginalPrefix().getOrNull())
+            || !"b/".equals(getPatchesModifiedPrefix().getOrNull());
     }
 
     public void runs(Action<? super NamedDomainObjectContainer<? extends RunConfig>> action) {
