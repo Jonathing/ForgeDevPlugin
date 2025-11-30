@@ -9,6 +9,7 @@ import net.minecraftforge.util.data.json.RunConfig;
 import org.gradle.api.Action;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
@@ -38,6 +39,8 @@ public abstract class SlimeLauncherOptionsImpl implements SlimeLauncherOptionsIn
     private final Property<Boolean> client = this.getObjects().property(Boolean.class).convention(false);
 
     private final MapProperty<String, SlimeLauncherOptionsNested> nested = this.getObjects().mapProperty(String.class, SlimeLauncherOptionsNested.class);
+
+    protected abstract @Inject ProjectLayout getProjectLayout();
 
     protected abstract @Inject ObjectFactory getObjects();
 
@@ -267,7 +270,7 @@ public abstract class SlimeLauncherOptionsImpl implements SlimeLauncherOptionsIn
         target.getMaxHeapSize().convention(this.getMaxHeapSize());
         target.getSystemProperties().convention(this.getSystemProperties());
         target.getEnvironment().convention(this.getEnvironment());
-        target.getWorkingDir().convention(this.getWorkingDir());
+        target.getWorkingDir().convention(this.getWorkingDir().orElse(getProjectLayout().getProjectDirectory().dir("runs/" + sourceSetName + '/' + this.name)));
         target.getClient().convention(this.getClient());
         return this.inherit(target, sourceSetName, configs, name);
     }
@@ -317,6 +320,8 @@ public abstract class SlimeLauncherOptionsImpl implements SlimeLauncherOptionsIn
             target.environment(child.getEnvironment().getOrElse(Map.of()));
 
             target.systemProperties(child.getSystemProperties().getOrElse(Map.of()));
+
+            target.getWorkingDir().set(child.getWorkingDir());
         }
 
         return target;

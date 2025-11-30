@@ -47,7 +47,7 @@ public interface SlimeLauncherOptions extends SlimeLauncherOptionsNested, Named 
 
     /// The working directory to use.
     ///
-    /// By default, this will be `run/`{@link #getName() name}.
+    /// By default, this will be `run/`{@link SourceSet#getName() sourceSet}`/`{@link #getName() name}.
     ///
     /// To clarify: this is the working directory of the Java process. Slime Launcher uses absolute file locations to
     /// place its caches and metadata, which do not interfere with the working directory.
