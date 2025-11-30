@@ -123,6 +123,7 @@ public abstract class ForgeDevExtension {
         Util.runFirst(project, syncMavenizer);
         Util.runFirst(project, syncMavenizerForExtra);
         Util.runFirst(project, syncMappingsMaven);
+        var minecraftDepsConfiguration = project.getConfigurations().detachedConfiguration();
         var mappingsConfiguration = project.getConfigurations().detachedConfiguration();
         var mappingsZipFile = this.getProviders().provider(mappingsConfiguration::getSingleFile);
 
@@ -210,8 +211,7 @@ public abstract class ForgeDevExtension {
 
         var reobfJar = tasks.register("reobfJar", LegacyReobfuscateJar.class, task -> {
             task.getInput().set(jar.flatMap(Jar::getArchiveFile));
-            // TODO Optimize this to use a detached configuration
-            task.getLibraries().from(project.getConfigurations().named(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME));
+            task.getLibraries().from(minecraftDepsConfiguration);
             task.getOutput().convention(task.getDefaultOutputFile());
         });
 
@@ -330,6 +330,7 @@ public abstract class ForgeDevExtension {
             project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, minecraftDependency);
             project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, minecraftExtraDependency);
             project.getDependencies().add(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME, mappingsDependency);
+            minecraftDepsConfiguration.withDependencies(d -> d.add(minecraftDependency));
             mappingsConfiguration.withDependencies(d -> d.add(mappingsDependency));
 
             // Add the patched source as a source dir during afterEvaluate, to not be overwritten by buildscripts

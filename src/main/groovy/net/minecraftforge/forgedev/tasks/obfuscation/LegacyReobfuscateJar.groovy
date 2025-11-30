@@ -101,6 +101,8 @@ abstract class LegacyReobfuscateJar extends ToolExec {
         }
 
         work.submit(Action) {
+            it.logLevel.set(standardOutputLogLevel)
+
             it.srg.set(this.srg)
             it.output.set(this.output)
             it.temporaryOutput.set(this.temporaryOutput)
@@ -118,6 +120,8 @@ abstract class LegacyReobfuscateJar extends ToolExec {
     protected static abstract class Action implements WorkAction<Parameters> {
         @CompileStatic
         static interface Parameters extends WorkParameters {
+            Property<LogLevel> getLogLevel()
+
             RegularFileProperty getSrg()
             RegularFileProperty getOutput()
             RegularFileProperty getTemporaryOutput()
@@ -132,7 +136,7 @@ abstract class LegacyReobfuscateJar extends ToolExec {
         @Override
         void execute() {
             var packages = new HashSet<String>()
-            var srgMappings = IMappingFile.load(this.parameters.srg.asFile.get())
+            var srgMappings = IMappingFile.load(parameters.srg.asFile.get())
             for (IMappingFile.IClass srgClass : srgMappings.getClasses()) {
                 String named = srgClass.getOriginal()
                 int idx = named.lastIndexOf('/')
@@ -141,17 +145,17 @@ abstract class LegacyReobfuscateJar extends ToolExec {
                 }
             }
 
-            var temporaryOutput = this.parameters.temporaryOutput.asFile.get()
+            var temporaryOutput = parameters.temporaryOutput.asFile.get()
             try (ZipFile zin = new ZipFile(temporaryOutput)
-                 ZipOutputStream out = new ZipOutputStream(new FileOutputStream(this.parameters.output.asFile.get()))) {
+                 ZipOutputStream out = new ZipOutputStream(new FileOutputStream(parameters.output.asFile.get()))) {
                 for (Enumeration<? extends ZipEntry> enu = zin.entries(); enu.hasMoreElements(); ) {
                     ZipEntry entry = enu.nextElement()
                     boolean filter = entry.isDirectory() || entry.getName().startsWith("mcp/") //Directories and MCP's annotations
-                    if (!this.parameters.keepPackages.get()) filter |= packages.contains(entry.getName())
-                    if (!this.parameters.keepData.get()) filter |= !entry.getName().endsWith(".class")
+                    if (!parameters.keepPackages.get()) filter |= packages.contains(entry.getName())
+                    if (!parameters.keepData.get()) filter |= !entry.getName().endsWith(".class")
 
                     if (filter) {
-                        LOGGER.lifecycle("Filtered: {}", entry.getName())
+                        LOGGER.log(parameters.logLevel.get(), "Filtered: {}", entry.getName())
                         continue
                     }
                     out.putNextEntry(entry)
