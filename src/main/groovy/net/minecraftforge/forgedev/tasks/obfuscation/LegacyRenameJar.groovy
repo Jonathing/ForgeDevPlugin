@@ -59,6 +59,7 @@ abstract class LegacyRenameJar extends ToolExec {
 
         this.temporaryMappings.convention(this.defaultOutputDirectory.map { it.file('mappings_temp.tsrg') })
         this.standardOutputLogLevel.set(LogLevel.INFO)
+        this.standardErrorLogLevel.set(LogLevel.INFO)
     }
 
     @Override
