@@ -32,8 +32,8 @@ java {
 gradleutils.pluginDevDefaults(configurations, libs.versions.gradle)
 
 dependencies {
-    compileOnly libs.srgutils
-    compileOnly libs.fastcsv
+    implementation libs.srgutils
+    implementation libs.fastcsv
 
     // Static Analysis
     compileOnly libs.nulls
@@ -44,7 +44,11 @@ dependencies {
     // GradleUtils Shared Base
     implementation libs.gradleutils.shared
 
+    // Plugins
+    compileOnly libs.gradle.download
+
     // Utils
+    implementation libs.bundles.asm
     implementation libs.bundles.utils
 }
 
@@ -76,12 +80,24 @@ gradlePlugin {
     website = gitversion.url
     vcsUrl = gitversion.url + '.git'
 
-    plugins.register('forgedev') {
-        id = 'net.minecraftforge.forgedev'
-        implementationClass = 'net.minecraftforge.forgedev.ForgeDevPlugin'
-        displayName = gradleutils.displayName.get()
-        description = project.description
-        tags = ['minecraftforge']
+    plugins {
+        register('forgedev') {
+            id = 'net.minecraftforge.forgedev'
+            implementationClass = 'net.minecraftforge.forgedev.ForgeDevPlugin'
+            displayName = gradleutils.displayName.get()
+            description = project.description
+            tags = ['minecraftforge']
+        }
+
+        register('forge') {
+            id = 'net.minecraftforge.forge.build.forge'
+            implementationClass = 'net.minecraftforge.forgedev.legacy.ForgeBuildPlugin'
+        }
+
+        register('convention') {
+            id = 'net.minecraftforge.forge.build.convention'
+            implementationClass = 'net.minecraftforge.forgedev.legacy.SharedBuildPlugin'
+        }
     }
 }
 

@@ -20,7 +20,7 @@ gradle.beforeProject { Project project ->
 
 //@formatter:off
 dependencyResolutionManagement.versionCatalogs.register('libs') {
-    version 'gradleutils', '3.3.34'
+    version 'gradleutils', '3.3.35'
 
     plugin 'licenser',       'net.minecraftforge.licenser'    version '1.2.0'
     plugin 'gradleutils',    'net.minecraftforge.gradleutils' versionRef 'gradleutils'
@@ -38,6 +38,14 @@ dependencyResolutionManagement.versionCatalogs.register('libs') {
 
     // GradleUtils Shared Base
     library 'gradleutils-shared', 'net.minecraftforge', 'gradleutils-shared' versionRef 'gradleutils'
+
+    // Plugins
+    library 'gradle-download', 'de.undercouch.download', 'de.undercouch.download.gradle.plugin' version '5.6.0'
+
+    version 'asm', '9.8'
+    library 'asm',      'org.ow2.asm', 'asm'      versionRef 'asm'
+    library 'asm-tree', 'org.ow2.asm', 'asm-tree' versionRef 'asm'
+    bundle 'asm', ['asm', 'asm-tree']
 
     library 'srgutils',  'net.minecraftforge', 'srgutils'   version '0.5.14'
     library 'fastcsv',   'de.siegmar',         'fastcsv'    version '3.7.0'
