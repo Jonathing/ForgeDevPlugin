@@ -1,6 +1,4 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import com.github.jengelman.gradle.plugins.shadow.ShadowJavaPlugin
-import org.gradle.api.attributes.plugin.GradlePluginApiVersion
 
 plugins {
     id 'java-gradle-plugin'
@@ -12,8 +10,7 @@ plugins {
     alias libs.plugins.gitversion
     alias libs.plugins.changelog
     alias libs.plugins.licenser
-    alias libs.plugins.plugin.publish
-    alias libs.plugins.shadow
+    alias libs.plugins.shadow apply false
 }
 
 gradleutils.displayName = 'ForgeDev'
@@ -26,7 +23,6 @@ println "Version: $version"
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
     withSourcesJar()
-    withJavadocJar()
 }
 
 gradleutils.pluginDevDefaults(configurations, libs.versions.gradle)
@@ -62,10 +58,12 @@ tasks.named('jar', Jar) {
     archiveClassifier = 'thin'
 }
 
-tasks.named('shadowJar', ShadowJar) {
-    enableAutoRelocation = true
-    archiveClassifier = null
-    relocationPrefix = 'net.minecraftforge.forgedev.shadow'
+pluginManager.withPlugin(libs.plugins.shadow.get().pluginId) {
+    tasks.named('shadowJar', ShadowJar) {
+        enableAutoRelocation = true
+        archiveClassifier = null
+        relocationPrefix = 'net.minecraftforge.forgedev.shadow'
+    }
 }
 
 tasks.withType(Javadoc).configureEach {
