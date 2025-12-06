@@ -35,7 +35,7 @@ abstract class LegacyApplyMappings extends DefaultTask implements ForgeDevTask {
     abstract @Input Property<Boolean> getLambdas()
 
     abstract @InputFile RegularFileProperty getInput()
-    abstract @InputFile RegularFileProperty getMappingsZip()
+    abstract @InputFiles ConfigurableFileCollection getMappings()
     abstract @OutputFile RegularFileProperty getOutput()
 
     @Inject
@@ -62,7 +62,7 @@ abstract class LegacyApplyMappings extends DefaultTask implements ForgeDevTask {
             it.lambdas.set this.lambdas
 
             it.input.set this.input
-            it.mappingsZip.set this.mappingsZip
+            it.mappingsZip.set this.mappings.singleFile
             it.output.set this.output
         }
 

@@ -34,9 +34,7 @@ import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.FileSystemLocationProperty;
 import org.gradle.api.file.ProjectLayout;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
@@ -50,7 +48,6 @@ import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.plugins.ide.eclipse.model.EclipseModel;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.inject.Inject;
@@ -117,15 +114,11 @@ public abstract class ForgeDevExtension {
         var downloadClientMappings = tasks.register("downloadClientMappings", DownloadMappings.class, task -> task.getSide().set("client"));
         var downloadServerMappings = tasks.register("downloadServerMappings", DownloadMappings.class, task -> task.getSide().set("server"));
 
-        var syncMavenizer = tasks.register("syncMavenizer", MavenizerMCPMaven.class);
-        var syncMavenizerForExtra = tasks.register("syncMavenizerForExtra", MavenizerMCPMaven.class);
-        var syncMappingsMaven = tasks.register("syncMappingsMaven", MavenizerSyncMappings.class);
-        Util.runFirst(project, syncMavenizer);
-        Util.runFirst(project, syncMavenizerForExtra);
-        Util.runFirst(project, syncMappingsMaven);
+        var syncMavenizer = Util.runFirst(project, tasks.register("syncMavenizer", MavenizerMCPMaven.class));
+        var syncMavenizerForExtra = Util.runFirst(project, tasks.register("syncMavenizerForExtra", MavenizerMCPMaven.class));
+        var syncMappingsMaven = Util.runFirst(project, tasks.register("syncMappingsMaven", MavenizerSyncMappings.class));
         var minecraftDepsConfiguration = project.getConfigurations().detachedConfiguration();
         var mappingsConfiguration = project.getConfigurations().detachedConfiguration();
-        var mappingsZipFile = this.getProviders().provider(mappingsConfiguration::getSingleFile);
 
         var applyPatches = tasks.register("applyPatches", ApplyPatches.class, task -> {
             final Provider<Directory> workDir = project.getLayout().getBuildDirectory().dir(task.getName());
@@ -144,8 +137,10 @@ public abstract class ForgeDevExtension {
         });
 
         var toMCPConfig = tasks.register("srg2mcp", LegacyApplyMappings.class, task -> {
+            task.dependsOn(syncMappingsMaven);
+
             task.getInput().set(applyPatches.flatMap(ApplyPatches::getOutput));
-            task.getMappingsZip().fileProvider(mappingsZipFile);
+            task.getMappings().setFrom(mappingsConfiguration);
             task.getLambdas().set(false);
         });
         var extractMapped = tasks.register("extractMapped", LegacyExtractZip.class, task -> {
@@ -210,6 +205,8 @@ public abstract class ForgeDevExtension {
         });
 
         var reobfJar = tasks.register("reobfJar", LegacyReobfuscateJar.class, task -> {
+            task.dependsOn(syncMavenizer);
+
             task.getInput().set(jar.flatMap(Jar::getArchiveFile));
             task.getLibraries().from(minecraftDepsConfiguration);
             task.getOutput().convention(task.getDefaultOutputFile());
@@ -367,7 +364,11 @@ public abstract class ForgeDevExtension {
             // This was actually filtering the PARENT jar file. Since we don't support parent Patchers anymore, this is not needed.
             //filterNew.configure(task -> task.getBlacklist().from(jar.flatMap(AbstractArchiveTask::getArchiveFile)));
 
-            tasks.withType(LegacyGenerateSRG.class, task -> task.getMappingsZip().fileProvider(mappingsZipFile));
+            tasks.withType(LegacyGenerateSRG.class, task -> {
+                task.dependsOn(syncMappingsMaven);
+
+                task.getMappings().setFrom(mappingsConfiguration);
+            });
 
             createMcp2Obf.configure(task -> task.getMcpSrgData().convention(createMcp2Srg.flatMap(LegacyGenerateSRG::getMcpSrgData)));
             createSrg2Mcp.configure(task -> task.getMcpSrgData().convention(createMcp2Srg.flatMap(LegacyGenerateSRG::getMcpSrgData)));
@@ -454,8 +455,10 @@ public abstract class ForgeDevExtension {
             } else {
                 // Remap the 'clean' with out mappings.
                 TaskProvider<LegacyApplyMappings> toMCPClean = tasks.register("srg2mcpClean", LegacyApplyMappings.class, task -> {
+                    task.dependsOn(syncMappingsMaven);
+
                     task.getInput().set(legacyPatcher.getCleanSrc());
-                    task.getMappingsZip().fileProvider(mappingsZipFile);
+                    task.getMappings().setFrom(mappingsConfiguration);
                     task.getLambdas().set(false);
                 });
 

@@ -35,7 +35,7 @@ abstract class LegacyGenerateSRG extends DefaultTask implements ForgeDevTask {
     abstract @Input Property<Boolean> getReverse()
 
     abstract @InputFile RegularFileProperty getMcpSrgData()
-    abstract @InputFile RegularFileProperty getMappingsZip()
+    abstract @InputFile ConfigurableFileCollection getMappings()
     abstract @OutputFile RegularFileProperty getOutput()
 
     protected abstract @InputFiles @Classpath ConfigurableFileCollection getWorkerClasspath()
@@ -66,7 +66,7 @@ abstract class LegacyGenerateSRG extends DefaultTask implements ForgeDevTask {
             it.reverse.set this.reverse
 
             it.mcpSrgData.set this.mcpSrgData
-            it.mappingsZip.set this.mappingsZip
+            it.mappingsZip.set this.mappings.singleFile
             it.output.set this.output
         }
 
