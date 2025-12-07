@@ -30,6 +30,8 @@ gradleutils.pluginDevDefaults(configurations, libs.versions.gradle)
 dependencies {
     implementation libs.srgutils
     implementation libs.fastcsv
+    implementation libs.jarjar
+    implementation libs.maven.artifact
 
     // Static Analysis
     compileOnly libs.nulls

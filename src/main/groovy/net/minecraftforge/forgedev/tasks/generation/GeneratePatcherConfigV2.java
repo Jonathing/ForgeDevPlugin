@@ -15,12 +15,15 @@ import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.ProviderConvertible;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
@@ -138,6 +141,55 @@ public abstract class GeneratePatcherConfigV2 extends DefaultTask implements For
             || this.getUniversalFilters().isPresent()
             || !"a/".equals(getPatchesOriginalPrefix().getOrNull())
             || !"b/".equals(getPatchesModifiedPrefix().getOrNull());
+    }
+
+
+    private static String depToString(Dependency value) {
+        String group = value.getGroup();
+        if (group == null)
+            throw new IllegalArgumentException("Dependency group cannot be null");
+
+        String version = value.getVersion();
+        if (version == null)
+            throw new IllegalArgumentException("Dependency version cannot be null");
+
+        return group + ':' + value.getName() + ':' + version;
+    }
+
+    public final void addCompileDependency(Dependency value) {
+        this.getExtraCompileDeps().add(depToString(value));
+    }
+
+    public final void addCompileDependency(Provider<? extends Dependency> value) {
+        this.addCompileDependency(value.get());
+    }
+
+    public final void addCompileDependency(ProviderConvertible<? extends Dependency> value) {
+        this.addCompileDependency(value.asProvider());
+    }
+
+    public final void addRuntimeDependency(Dependency value) {
+        this.getExtraRuntimeDeps().add(depToString(value));
+    }
+
+    public final void addRuntimeDependency(Provider<? extends Dependency> value) {
+        this.addRuntimeDependency(value.get());
+    }
+
+    public final void addRuntimeDependency(ProviderConvertible<? extends Dependency> value) {
+        this.addRuntimeDependency(value.asProvider());
+    }
+
+    public final void addAnnotationProcessorDependency(Dependency value) {
+        this.getExtraAnnotationProcessorDeps().add(depToString(value));
+    }
+
+    public final void addAnnotationProcessorDependency(Provider<? extends Dependency> value) {
+        this.addAnnotationProcessorDependency(value.get());
+    }
+
+    public final void addAnnotationProcessorDependency(ProviderConvertible<? extends Dependency> value) {
+        this.addAnnotationProcessorDependency(value.asProvider());
     }
 
     public void runs(Action<? super NamedDomainObjectContainer<? extends RunConfig>> action) {
