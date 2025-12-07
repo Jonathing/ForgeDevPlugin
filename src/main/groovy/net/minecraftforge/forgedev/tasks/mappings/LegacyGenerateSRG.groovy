@@ -35,7 +35,7 @@ abstract class LegacyGenerateSRG extends DefaultTask implements ForgeDevTask {
     abstract @Input Property<Boolean> getReverse()
 
     abstract @InputFile RegularFileProperty getMcpSrgData()
-    abstract @InputFile ConfigurableFileCollection getMappings()
+    abstract @InputFiles ConfigurableFileCollection getMappings()
     abstract @OutputFile RegularFileProperty getOutput()
 
     protected abstract @InputFiles @Classpath ConfigurableFileCollection getWorkerClasspath()
