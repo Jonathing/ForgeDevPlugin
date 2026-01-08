@@ -292,6 +292,7 @@ abstract class CheckATs extends CheckTask {
             final String comment = idx === -1 ? null : line.substring(idx)
             if (idx !== -1) line = line.substring(0, idx - 1)
             final data = (line.trim() + '     ').split(' ', -1)
+            data[1] = data[1].replaceAll('/', '.') // Convert to Source names, internal names are fine by spec, but not supported by old AST based AT implementations.
             new Entry(data[0], data[1], data[2], comment)
         }
 
