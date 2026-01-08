@@ -117,7 +117,7 @@ public abstract class SlimeLauncherOptionsImpl implements SlimeLauncherOptionsIn
     public void with(String sourceSetName, Action<? super SlimeLauncherOptionsNested> action) {
         var child = getObjects().newInstance(SlimeLauncherOptionsImpl.class, this.name);
         action.execute(child);
-        this.nested.put(sourceSetName, child);
+        this.getNested().put(sourceSetName, child);
     }
 
     /* SETTERS */
@@ -302,7 +302,7 @@ public abstract class SlimeLauncherOptionsImpl implements SlimeLauncherOptionsIn
                 target.systemProperties(config.props);
         }
 
-        var child = this.nested.getting(sourceSetName).getOrNull();
+        var child = this.getNested().getting(sourceSetName).getOrNull();
         if (child != null) {
             if (child.getMainClass().filter(Util.IS_NOT_BLANK).isPresent())
                 target.getMainClass().set(child.getMainClass());

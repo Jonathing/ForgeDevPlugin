@@ -9,15 +9,10 @@ import org.gradle.api.Named;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.provider.ListProperty;
-import org.gradle.api.provider.MapProperty;
-import org.gradle.api.provider.Property;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
-import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.SourceSet;
 

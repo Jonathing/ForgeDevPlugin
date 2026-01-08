@@ -4,14 +4,10 @@
  */
 package net.minecraftforge.forgedev.tasks.launcher;
 
-import com.google.gson.JsonIOException;
-import com.google.gson.reflect.TypeToken;
 import net.minecraftforge.forgedev.ForgeDevProblems;
 import net.minecraftforge.forgedev.ForgeDevTask;
 import net.minecraftforge.forgedev.Tools;
 import net.minecraftforge.forgedev.Util;
-import net.minecraftforge.util.data.json.JsonData;
-import net.minecraftforge.util.data.json.RunConfig;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
@@ -25,7 +21,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
@@ -79,7 +74,7 @@ abstract class SlimeLauncherEclipseConfiguration extends DefaultTask implements 
 
     protected abstract @Internal DirectoryProperty getCacheDir();
 
-    protected abstract @InputFile RegularFileProperty getMetadataZip();
+    protected abstract @InputFiles ConfigurableFileCollection getMetadata();
 
     protected abstract @Inject ObjectFactory getObjects();
 
@@ -131,7 +126,7 @@ abstract class SlimeLauncherEclipseConfiguration extends DefaultTask implements 
         //region Slime Launcher setup
         args.addAll(0, List.of("--main", options.getMainClass().get(),
             "--cache", this.getCacheDir().get().getAsFile().getAbsolutePath(),
-            "--metadata", this.getMetadataZip().get().getAsFile().getAbsolutePath(),
+            "--metadata", this.getMetadata().getSingleFile().getAbsolutePath(),
             "--"));
 
         try {
